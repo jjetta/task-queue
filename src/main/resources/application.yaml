@@ -1,3 +1,43 @@
 spring:
   application:
-    name: task-queue
+    name: distributed-task-queue
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/taskqueue
+    username: taskqueue
+    password: taskqueue
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  queue:
+    stream-key: task-stream
+    consumer-group: workers
+  retry:
+    max-attempts: 5
+    base-delay-seconds: 30
+    max-delay-seconds: 600
+    jitter-seconds: 5
+  sweeper:
+    interval-ms: 5000

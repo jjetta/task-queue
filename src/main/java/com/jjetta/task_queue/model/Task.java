@@ -13,28 +13,6 @@ import java.util.Objects;
 @Table(name = "tasks")
 public class Task {
 
-    public static Task createTask(TaskType type, String payload) {
-        Objects.requireNonNull(type, "Task type cannot be null");
-        Objects.requireNonNull(payload, "Payload cannot be null");
-        if (payload.isBlank()) {
-            throw new IllegalArgumentException("Payload cannot be blank");
-        }
-        return new Task(type, payload);
-    }
-
-    private Task(TaskType type, String payload) {
-        this.id = null;
-        this.status = TaskStatus.PENDING;
-        this.failureCount = 0;
-        this.nextRetryAt = null;
-        this.type = type;
-        this.payload = payload;
-        this.createdAt = Instant.now();
-        this.claimedAt = null;
-        this.completedAt = null;
-    }
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
@@ -66,6 +44,27 @@ public class Task {
     @Column
     private Instant completedAt;
 
+    public static Task createTask(TaskType type, String payload) {
+        Objects.requireNonNull(type, "Task type cannot be null");
+        Objects.requireNonNull(payload, "Payload cannot be null");
+        if (payload.isBlank()) {
+            throw new IllegalArgumentException("Payload cannot be blank");
+        }
+        return new Task(type, payload);
+    }
+
+    private Task(TaskType type, String payload) {
+        this.id = null;
+        this.status = TaskStatus.PENDING;
+        this.failureCount = 0;
+        this.nextRetryAt = null;
+        this.type = type;
+        this.payload = payload;
+        this.createdAt = Instant.now();
+        this.claimedAt = null;
+        this.completedAt = null;
+    }
+
     /** Mutates the status of a task using the state transition table defined in
      *  TaskStatus.java.
      *
@@ -91,6 +90,4 @@ public class Task {
         this.failureCount = 0;
         this.nextRetryAt = null;
     }
-
-
 }

@@ -36,8 +36,8 @@ app:
     consumer-group: workers
   retry:
     max-attempts: 5
-    base-delay-seconds: 30
-    max-delay-seconds: 600
-    jitter-seconds: 5
+    base-delay-seconds: 2
+    max-delay-seconds: 60
+    jitter-seconds: 1
   sweeper:
     interval-ms: 5000

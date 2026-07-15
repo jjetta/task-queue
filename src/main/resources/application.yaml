@@ -35,9 +35,9 @@ app:
     stream-key: task-stream
     consumer-group: workers
   retry:
-    max-attempts: 5
-    base-delay-seconds: 2
-    max-delay-seconds: 60
-    jitter-seconds: 1
+    max-retries: 5
+    base-delay: 2s
+    max-delay: 60s
+    jitter: 3s
   sweeper:
     interval-ms: 5000

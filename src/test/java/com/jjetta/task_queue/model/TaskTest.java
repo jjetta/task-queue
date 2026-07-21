@@ -3,17 +3,14 @@ package com.jjetta.task_queue.model;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.stream.Stream;
 
 import static com.jjetta.task_queue.model.Task.calculateNextRetryAt;
 import static com.jjetta.task_queue.model.Task.createTask;
-import static java.time.Instant.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.BDDAssertions.within;
@@ -131,5 +128,48 @@ public class TaskTest {
     }
 
     @Test
-    void replay() {}
+    void shouldDieWhenRetriesAreExhausted() {
+        int maxRetries = 3;
+        Duration baseDelay = Duration.ofSeconds(2);
+        Duration maxDelay = Duration.ofSeconds(60);
+        Duration jitterWindow = Duration.ofSeconds(5);
+
+        Task task = createTask(TaskType.SLEEP_SUCCEED, "payload");
+        while (task.getFailureCount() < maxRetries) {
+            task.transitionTo(TaskStatus.RUNNING);
+            task.recordFailure(maxRetries, baseDelay, maxDelay, jitterWindow);
+        }
+
+        assertThat(task.getStatus()).isEqualTo(TaskStatus.DEAD);
+    }
+
+    @Test
+    void replayShouldResetTaskStatusAndFailureCount() {
+        int maxRetries = 3;
+        Duration baseDelay = Duration.ofSeconds(2);
+        Duration maxDelay = Duration.ofSeconds(60);
+        Duration jitterWindow = Duration.ofSeconds(5);
+
+        Task task = createTask(TaskType.SLEEP_SUCCEED, "payload");
+        while (task.getFailureCount() < maxRetries) {
+            task.transitionTo(TaskStatus.RUNNING);
+            task.recordFailure(maxRetries, baseDelay, maxDelay, jitterWindow);
+        }
+
+        assertThat(task.getStatus()).isEqualTo(TaskStatus.DEAD);
+
+        task.replay();
+
+        assertThat(task.getStatus()).isEqualTo(TaskStatus.PENDING);
+        assertThat(task.getFailureCount()).isZero();
+        assertThat(task.getNextRetryAt()).isNull();
+    }
+
+    @Test
+    void taskCanOnlyBeReplayedFromDeadState() {
+        Task task = createTask(TaskType.SLEEP_SUCCEED, "payload");
+        assertThatThrownBy(task::replay)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Only Tasks in a DEAD state can be replayed.");
+    }
 }

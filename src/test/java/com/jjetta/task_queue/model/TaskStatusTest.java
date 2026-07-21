@@ -1,6 +1,5 @@
-package com.jjetta.task_queue;
+package com.jjetta.task_queue.model;
 
-import com.jjetta.task_queue.model.TaskStatus;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;

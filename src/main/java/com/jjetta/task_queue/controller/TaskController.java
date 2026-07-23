@@ -2,6 +2,7 @@ package com.jjetta.task_queue.controller;
 
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.service.TaskService;
+import com.jjetta.task_queue.web.TaskClaimedDto;
 import com.jjetta.task_queue.web.TaskCreationRequestDto;
 import com.jjetta.task_queue.web.TaskCreationResponseDto;
 import jakarta.validation.Valid;
@@ -10,9 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/v1/tasks")
+@RequestMapping("/v1/tasks")
 public class TaskController {
 
     private final TaskService taskService;
@@ -38,6 +40,21 @@ public class TaskController {
     public ResponseEntity<Task> getTask(@PathVariable Long id) {
         Task task = taskService.getTaskById(id);
         return ResponseEntity.ok(task);
+    }
+
+    @GetMapping("/next")
+    public ResponseEntity<TaskClaimedDto> pullNextTask(@RequestParam(name = "type") String type) {
+        Optional<Task> optionalTask = taskService.pullAndClaimTask(type);
+        if (optionalTask.isPresent()) {
+            Task task = optionalTask.get();
+            return ResponseEntity.ok(TaskClaimedDto.builder()
+                    .id(task.getId())
+                    .type(task.getType())
+                    .params(task.getParams())
+                    .build());
+        } else {
+            return ResponseEntity.noContent().build();
+        }
     }
 
 }

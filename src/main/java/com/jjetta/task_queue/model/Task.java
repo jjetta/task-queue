@@ -31,8 +31,8 @@ public class Task {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> params;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "task_status")
     private TaskStatus status;
 
     @Column(nullable = false)

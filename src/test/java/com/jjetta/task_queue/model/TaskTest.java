@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 import static com.jjetta.task_queue.model.Task.calculateNextRetryAt;
 import static com.jjetta.task_queue.model.Task.createTask;
@@ -18,42 +19,38 @@ import static org.assertj.core.api.BDDAssertions.within;
 public class TaskTest {
 
     @Test
-    void createTaskWithNullType() {
+    void shouldNotCreateTaskWithNullType() {
         assertThatThrownBy(() -> {
-            createTask(null, "payload");
+            createTask(null, Map.of());
         })
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("Task type cannot be null");
     }
 
     @Test
-    void createTaskWithNullPayload() {
-        assertThatThrownBy(() -> {
-            createTask(TaskType.SLEEP_SUCCEED, null);
-        })
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("Payload cannot be null");
+    void shouldCreateTaskWithNullParams() {
+        Task task = createTask("background-job", null);
+        assertThat(task.getType()).isEqualTo("background-job");
+        assertThat(task.getParams()).isEmpty();
     }
 
     @Test
-    void createTaskWithBlankPayload() {
-        assertThatThrownBy(() -> {
-            createTask(TaskType.SLEEP_SUCCEED, "");
-        })
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Payload cannot be blank");
+    void shouldCreateTaskWithEmptyParams() {
+        Task task = createTask("background-job", Map.of());
+        assertThat(task.getType()).isEqualTo("background-job");
+        assertThat(task.getParams()).isEmpty();
     }
 
     @Test
-    void validTransition() {
-        Task task = createTask(TaskType.SLEEP_SUCCEED, "payload");
+    void validTaskStatusTransition() {
+        Task task = createTask("background-job", Map.of());
         task.transitionTo(TaskStatus.RUNNING);
         assertThat(task.getStatus()).isEqualTo(TaskStatus.RUNNING);
     }
 
     @Test
-    void invalidTransition() {
-        Task task = createTask(TaskType.SLEEP_SUCCEED, "payload");
+    void invalidTaskStatusTransition() {
+        Task task = createTask("background-job", Map.of());
         TaskStatus expectedStatus = task.getStatus();
         assertThatThrownBy(() -> {
             task.transitionTo(TaskStatus.COMPLETED);
@@ -134,7 +131,7 @@ public class TaskTest {
         Duration maxDelay = Duration.ofSeconds(60);
         Duration jitterWindow = Duration.ofSeconds(5);
 
-        Task task = createTask(TaskType.SLEEP_SUCCEED, "payload");
+        Task task = createTask("background-job", Map.of());
         while (task.getFailureCount() < maxRetries) {
             task.transitionTo(TaskStatus.RUNNING);
             task.recordFailure(maxRetries, baseDelay, maxDelay, jitterWindow);
@@ -150,7 +147,7 @@ public class TaskTest {
         Duration maxDelay = Duration.ofSeconds(60);
         Duration jitterWindow = Duration.ofSeconds(5);
 
-        Task task = createTask(TaskType.SLEEP_SUCCEED, "payload");
+        Task task = createTask("background-job", Map.of());
         while (task.getFailureCount() < maxRetries) {
             task.transitionTo(TaskStatus.RUNNING);
             task.recordFailure(maxRetries, baseDelay, maxDelay, jitterWindow);
@@ -166,10 +163,11 @@ public class TaskTest {
     }
 
     @Test
-    void taskCanOnlyBeReplayedFromDeadState() {
-        Task task = createTask(TaskType.SLEEP_SUCCEED, "payload");
+    void taskShouldOnlyBeReplayedFromDeadState() {
+        Task task = createTask("background-job", Map.of());
         assertThatThrownBy(task::replay)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Only Tasks in a DEAD state can be replayed.");
     }
+
 }

@@ -2,13 +2,15 @@ package com.jjetta.task_queue.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static java.lang.Math.random;
 
 @Entity
 @Getter
@@ -23,21 +25,18 @@ public class Task {
     private Long id;
 
     @Column(nullable = false)
+    private String type;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> params;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
     @Column(nullable = false)
     private Integer failureCount;
-
-    @Column
-    private Instant nextRetryAt;
-
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private TaskType type;
-
-    @Column(nullable = false)
-    private String payload;
 
     @Column(nullable = false)
     private Instant createdAt;
@@ -48,25 +47,33 @@ public class Task {
     @Column
     private Instant completedAt;
 
-    public static Task createTask(TaskType type, String payload) {
+    @Column
+    private Instant nextRetryAt;
+
+    public static Task createTask(String type, Map<String, Object> params) {
         Objects.requireNonNull(type, "Task type cannot be null");
-        Objects.requireNonNull(payload, "Payload cannot be null");
-        if (payload.isBlank()) {
-            throw new IllegalArgumentException("Payload cannot be blank");
+
+        if (type.isBlank()) {
+            throw new IllegalArgumentException("Task type cannot be blank");
         }
-        return new Task(type, payload);
+
+        if (params == null || params.isEmpty()) {
+            params = Map.of();
+        }
+
+        return new Task(type, params);
     }
 
-    private Task(TaskType type, String payload) {
+    private Task(String type, Map<String, Object> params) {
         this.id = null;
+        this.type = type;
+        this.params = params;
         this.status = TaskStatus.PENDING;
         this.failureCount = 0;
-        this.nextRetryAt = null;
-        this.type = type;
-        this.payload = payload;
         this.createdAt = Instant.now();
         this.claimedAt = null;
         this.completedAt = null;
+        this.nextRetryAt = null;
     }
 
     /** Mutates the status of a task using the state transition table defined in
@@ -88,7 +95,7 @@ public class Task {
      *
      * @param maxRetries the maximum amount of times the Task may be retried
      * @param baseDelay the base Duration a task should delay
-     * @param maxDelay the maximium Duration a task should delay
+     * @param maxDelay the maximum Duration a task should delay
      * @param jitterWindow the window of time for jitter
      */
     public void recordFailure(int maxRetries,

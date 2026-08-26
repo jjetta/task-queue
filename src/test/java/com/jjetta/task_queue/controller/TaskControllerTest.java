@@ -62,7 +62,7 @@ public class TaskControllerTest {
     @Test
     public void should400OnInvalidRequest() throws Exception {
         TaskCreationRequestDto requestDto = TaskCreationRequestDto.builder()
-                .type("background-job")
+                .type(null)
                 .params(Map.of())
                 .build();
 

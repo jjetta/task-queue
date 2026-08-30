@@ -5,7 +5,9 @@ import com.jjetta.task_queue.service.TaskService;
 import com.jjetta.task_queue.web.TaskClaimedDto;
 import com.jjetta.task_queue.web.TaskCreationRequestDto;
 import com.jjetta.task_queue.web.TaskCreationResponseDto;
+import com.jjetta.task_queue.web.TaskReportDto;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -24,8 +26,8 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity<TaskCreationResponseDto> createTask(@RequestBody @Valid TaskCreationRequestDto taskCreationRequestDto) {
-        Task createdTask = taskService.createTask(taskCreationRequestDto.type(), taskCreationRequestDto.params());
+    public ResponseEntity<TaskCreationResponseDto> createTask(@RequestBody @Valid TaskCreationRequestDto taskCreationRequest) {
+        Task createdTask = taskService.createTask(taskCreationRequest.type(), taskCreationRequest.params());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -55,6 +57,12 @@ public class TaskController {
         } else {
             return ResponseEntity.noContent().build();
         }
+    }
+
+    @PostMapping("/{id}/report")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reportExecutionResult(@PathVariable Long id, @RequestBody @Valid TaskReportDto taskReport) {
+        taskService.reportTaskOutcome(id, taskReport);
     }
 
 }

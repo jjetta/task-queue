@@ -1,13 +1,15 @@
 package com.jjetta.task_queue.controller;
 
+import com.jjetta.task_queue.exception.InvalidTaskClaimTokenException;
 import com.jjetta.task_queue.exception.TaskNotFoundException;
+import com.jjetta.task_queue.exception.TaskNotRunningException;
 import com.jjetta.task_queue.model.Task;
+import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.service.TaskService;
 import com.jjetta.task_queue.web.TaskCreationRequestDto;
+import com.jjetta.task_queue.web.TaskReportDto;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.mockito.AdditionalAnswers;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -22,6 +24,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @WebMvcTest(TaskController.class)
 public class TaskControllerTest {
@@ -140,6 +143,109 @@ public class TaskControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
 
         Mockito.verify(taskService).pullAndClaimTask(typeParam);
+    }
+
+    @Test
+    public void shouldReportExecutionResultSuccessfully() throws Exception {
+        Long id = 3L;
+        UUID uuid = UUID.randomUUID();
+
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.SUCCESS)
+                .claimToken(uuid)
+                .build();
+
+        String json =  objectMapper.writeValueAsString(taskReport);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/v1/tasks/{id}/report", id)
+                .content(json)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+        Mockito.verify(taskService).reportTaskOutcome(id, taskReport);
+    }
+
+    @Test
+    public void shouldThrowTaskNotRunningExceptionWhenReportingExecutionResult() throws Exception {
+        Long id = 3L;
+
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.SUCCESS)
+                .claimToken(UUID.randomUUID())
+                .build();
+
+        String json = objectMapper.writeValueAsString(taskReport);
+
+        Mockito.doThrow(new TaskNotRunningException(id, TaskStatus.PENDING))
+                .when(taskService).reportTaskOutcome(id, taskReport);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/v1/tasks/{id}/report", id)
+                .content(json)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isConflict());
+
+        Mockito.verify(taskService).reportTaskOutcome(id, taskReport);
+    }
+
+    @Test
+    public void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingExecutionResult() throws Exception {
+        Long id = 3L;
+        UUID uuid = UUID.randomUUID();
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.SUCCESS)
+                .claimToken(uuid)
+                .build();
+
+        String json =  objectMapper.writeValueAsString(taskReport);
+
+        Mockito.doThrow(new InvalidTaskClaimTokenException(id, uuid))
+                .when(taskService).reportTaskOutcome(id, taskReport);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/v1/tasks/{id}/report", id)
+                .content(json)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isConflict());
+
+        Mockito.verify(taskService).reportTaskOutcome(id, taskReport);
+    }
+
+    @Test
+    public void should400WhenReportingExecutionResultNullOutcome() throws Exception {
+        Long id = 3L;
+
+        UUID reportUuid = UUID.randomUUID();
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(null)
+                .claimToken(reportUuid)
+                .build();
+
+        String json =  objectMapper.writeValueAsString(taskReport);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/v1/tasks/{id}/report", id)
+                .content(json)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+        Mockito.verifyNoInteractions(taskService);
+    }
+
+    @Test
+    public void should400WhenReportingExecutionResultNullUuid() throws Exception {
+        Long id = 3L;
+
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.SUCCESS)
+                .claimToken(null)
+                .build();
+
+        String json =  objectMapper.writeValueAsString(taskReport);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/v1/tasks/{id}/report", id)
+                        .content(json)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+        Mockito.verifyNoInteractions(taskService);
     }
 
 }

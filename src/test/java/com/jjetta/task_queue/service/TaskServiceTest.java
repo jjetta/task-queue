@@ -1,18 +1,25 @@
 package com.jjetta.task_queue.service;
 
+import com.jjetta.task_queue.config.RetryProperties;
+import com.jjetta.task_queue.exception.InvalidTaskClaimTokenException;
 import com.jjetta.task_queue.exception.TaskNotFoundException;
+import com.jjetta.task_queue.exception.TaskNotRunningException;
+import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
 import com.jjetta.task_queue.model.Task;
+import com.jjetta.task_queue.web.TaskReportDto;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import javax.swing.*;
+import java.time.Duration;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,6 +34,18 @@ public class TaskServiceTest {
     private TaskService taskService;
 
     private Task task;
+
+    @BeforeEach
+    void setUp() {
+        RetryProperties retryProperties = new RetryProperties(
+                3,
+                Duration.ofSeconds(2),
+                Duration.ofSeconds(60),
+                Duration.ofSeconds(3)
+        );
+
+        taskService = new TaskService(taskRepository, retryProperties);
+    }
 
     @Test
     public void shouldCreateTaskSuccessfully() {
@@ -154,5 +173,138 @@ public class TaskServiceTest {
         assertThatThrownBy(() -> taskService.pullAndClaimTask(typeParam))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Pending task discovered, locked, and claimed, but not found.");
+    }
+
+    @Test
+    public void shouldReportSuccessfulTaskOutcome() {
+        Long id = 3L;
+        UUID taskUuid = UUID.randomUUID();
+
+        Task testTask =  Task.createTask("background-job", Map.of());
+        ReflectionTestUtils.setField(testTask, "id", id);
+        ReflectionTestUtils.setField(testTask, "claimToken", taskUuid);
+        ReflectionTestUtils.setField(testTask, "status", TaskStatus.RUNNING);
+
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.SUCCESS)
+                .claimToken(taskUuid)
+                .build();
+
+        Mockito.when(taskRepository.findById(id))
+                .thenReturn(Optional.of(testTask));
+
+        taskService.reportTaskOutcome(id, taskReport);
+
+        assertThat(testTask.getStatus()).isEqualTo(TaskStatus.COMPLETED);
+        assertThat(testTask.getCompletedAt()).isNotNull();
+        assertThat(testTask.getClaimToken()).isNull();
+
+        Mockito.verify(taskRepository).save(testTask);
+    }
+
+    @Test
+    public void shouldReportFailedTaskOutcomeAndReturnToPendingState() {
+        Long id = 3L;
+        UUID taskUuid = UUID.randomUUID();
+
+        Task testTask =  Task.createTask("background-job", Map.of());
+        ReflectionTestUtils.setField(testTask, "id", id);
+        ReflectionTestUtils.setField(testTask, "claimToken", taskUuid);
+        ReflectionTestUtils.setField(testTask, "status", TaskStatus.RUNNING);
+
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.FAILURE)
+                .claimToken(taskUuid)
+                .build();
+
+        Mockito.when(taskRepository.findById(id))
+                .thenReturn(Optional.of(testTask));
+
+        taskService.reportTaskOutcome(id, taskReport);
+
+        assertThat(testTask.getStatus()).isEqualTo(TaskStatus.PENDING);
+        assertThat(testTask.getNextRetryAt()).isNotNull();
+        assertThat(testTask.getClaimToken()).isNull();
+
+        Mockito.verify(taskRepository).save(testTask);
+    }
+
+    @Test
+    public void shouldReportFailedTaskOutcomeAndReturnToDeadState() {
+        Long id = 3L;
+        UUID taskUuid = UUID.randomUUID();
+
+        Task testTask =  Task.createTask("background-job", Map.of());
+        ReflectionTestUtils.setField(testTask, "id", id);
+        ReflectionTestUtils.setField(testTask, "claimToken", taskUuid);
+        ReflectionTestUtils.setField(testTask, "status", TaskStatus.RUNNING);
+        ReflectionTestUtils.setField(testTask, "failureCount", 3);
+
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.FAILURE)
+                .claimToken(taskUuid)
+                .build();
+
+        Mockito.when(taskRepository.findById(id))
+                .thenReturn(Optional.of(testTask));
+
+        taskService.reportTaskOutcome(id, taskReport);
+
+        assertThat(testTask.getStatus()).isEqualTo(TaskStatus.DEAD);
+        assertThat(testTask.getNextRetryAt()).isNull();
+        assertThat(testTask.getClaimToken()).isNull();
+
+
+        Mockito.verify(taskRepository).save(testTask);
+    }
+
+    @Test
+    public void shouldThrowTaskNotRunningExceptionWhenReportingTaskOutcome() {
+        Long id = 3L;
+        UUID taskUuid = UUID.randomUUID();
+
+        Task testTask =  Task.createTask("background-job", Map.of());
+        ReflectionTestUtils.setField(testTask, "id", id);
+        ReflectionTestUtils.setField(testTask, "claimToken", taskUuid);
+
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.SUCCESS)
+                .claimToken(taskUuid)
+                .build();
+
+        Mockito.when(taskRepository.findById(id))
+                .thenReturn(Optional.of(testTask));
+
+        assertThatThrownBy(() -> taskService.reportTaskOutcome(id, taskReport))
+                .isInstanceOf(TaskNotRunningException.class)
+                .hasMessage("Attempt to report execution outcome on task with id: " + id + ", but said task is " + testTask.getStatus());
+
+        Mockito.verify(taskRepository, Mockito.never()).save(testTask);
+    }
+
+    @Test
+    public void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingTaskOutcome() {
+        Long id = 3L;
+        UUID taskUuid = UUID.randomUUID();
+
+        Task testTask =  Task.createTask("background-job", Map.of());
+        ReflectionTestUtils.setField(testTask, "id", id);
+        ReflectionTestUtils.setField(testTask, "status", TaskStatus.RUNNING);
+        ReflectionTestUtils.setField(testTask, "claimToken", taskUuid);
+
+        UUID reportUuid = UUID.randomUUID();
+        TaskReportDto taskReport = TaskReportDto.builder()
+                .outcome(TaskReportDto.Outcome.SUCCESS)
+                .claimToken(reportUuid)
+                .build();
+
+        Mockito.when(taskRepository.findById(id))
+                .thenReturn(Optional.of(testTask));
+
+        assertThatThrownBy(() -> taskService.reportTaskOutcome(id, taskReport))
+                .isInstanceOf(InvalidTaskClaimTokenException.class)
+                .hasMessage("Invalid task claim token: " + reportUuid + " for task with id: " + id);
+
+        Mockito.verify(taskRepository, Mockito.never()).save(testTask);
     }
 }

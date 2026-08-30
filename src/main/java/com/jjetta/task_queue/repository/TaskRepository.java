@@ -25,7 +25,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query(value = """
             UPDATE tasks
             SET status = 'RUNNING',
-                claimed_at = now()
+                claimed_at = now(),
+                claim_token = gen_random_uuid()
             WHERE id = :id
                 AND status = 'PENDING'
             """, nativeQuery = true)

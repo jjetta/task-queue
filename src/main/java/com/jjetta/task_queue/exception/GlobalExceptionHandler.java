@@ -63,4 +63,30 @@ public class GlobalExceptionHandler {
 
         return problem;
     }
+
+    @ExceptionHandler(InvalidTaskClaimTokenException.class)
+    public ProblemDetail handleInvalidTaskReportTokenException(InvalidTaskClaimTokenException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+        );
+
+        problem.setTitle("Task Claim Token Invalid");
+        problem.setProperty("timestamp", Instant.now());
+
+        return problem;
+    }
+
+    @ExceptionHandler(TaskNotRunningException.class)
+    public ProblemDetail handleTaskNotRunningException(TaskNotRunningException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+        );
+
+        problem.setTitle("Task Not Running");
+        problem.setProperty("timestamp", Instant.now());
+
+        return problem;
+    }
 }

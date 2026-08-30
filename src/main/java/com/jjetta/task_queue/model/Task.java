@@ -12,11 +12,11 @@ import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
 
-
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString
 @Table(name = "tasks")
 public class Task {
 
@@ -97,7 +97,7 @@ public class Task {
     public void recordSuccess() {
         this.transitionTo(TaskStatus.COMPLETED);
         this.completedAt = Instant.now();
-        this.clearToken();
+        this.releaseClaim();
     }
 
     /** Increments a Task's failure count by 1. If maxRetries has been reached,
@@ -121,7 +121,7 @@ public class Task {
             this.transitionTo(TaskStatus.PENDING);
             this.nextRetryAt = calculateNextRetryAt(baseDelay, maxDelay, jitterWindow, this.failureCount);
         }
-        this.clearToken();
+        this.releaseClaim();
     }
 
     /** Calculate when a task is to be retried upon failure (exponential backoff).
@@ -154,8 +154,9 @@ public class Task {
         return Instant.now().plus(delay);
     }
 
-    public void clearToken() {
+    public void releaseClaim() {
         this.claimToken = null;
+        this.claimedAt = null;
     }
 
     /** In the event a task is in a DEAD state, this method resets its status to

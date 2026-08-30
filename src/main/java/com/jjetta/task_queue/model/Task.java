@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.UUID;
 
 
 @Entity
@@ -50,6 +51,9 @@ public class Task {
     @Column
     private Instant nextRetryAt;
 
+    @Column
+    private UUID claimToken;
+
     public static Task createTask(String type, Map<String, Object> params) {
         Objects.requireNonNull(type, "Task type cannot be null");
 
@@ -74,6 +78,7 @@ public class Task {
         this.claimedAt = null;
         this.completedAt = null;
         this.nextRetryAt = null;
+        this.claimToken = null;
     }
 
     /** Mutates the status of a task using the state transition table defined in
@@ -87,6 +92,12 @@ public class Task {
         } else {
             throw new IllegalStateException("Cannot transition from " + this.status  + " to " + newStatus);
         }
+    }
+
+    public void recordSuccess() {
+        this.transitionTo(TaskStatus.COMPLETED);
+        this.completedAt = Instant.now();
+        this.clearToken();
     }
 
     /** Increments a Task's failure count by 1. If maxRetries has been reached,
@@ -110,6 +121,7 @@ public class Task {
             this.transitionTo(TaskStatus.PENDING);
             this.nextRetryAt = calculateNextRetryAt(baseDelay, maxDelay, jitterWindow, this.failureCount);
         }
+        this.clearToken();
     }
 
     /** Calculate when a task is to be retried upon failure (exponential backoff).
@@ -140,6 +152,10 @@ public class Task {
         delay = delay.plus(jitter);
 
         return Instant.now().plus(delay);
+    }
+
+    public void clearToken() {
+        this.claimToken = null;
     }
 
     /** In the event a task is in a DEAD state, this method resets its status to

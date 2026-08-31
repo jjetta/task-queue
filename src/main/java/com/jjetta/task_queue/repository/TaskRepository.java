@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
@@ -31,4 +34,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                 AND status = 'PENDING'
             """, nativeQuery = true)
     int claimTask(@Param("id") Long id);
+
+    @Query(value = """
+            SELECT * FROM tasks
+            WHERE status = 'RUNNING'
+                AND claimed_at < :cutoff
+            """, nativeQuery = true)
+    List<Task> findStaleRunningTasks(@Param("cutoff") Instant cutoff);
 }

@@ -1,0 +1,2 @@
+ALTER TABLE tasks
+ADD COLUMN version int NOT NULL DEFAULT 1;

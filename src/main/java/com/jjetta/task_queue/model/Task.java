@@ -25,6 +25,10 @@ public class Task {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @Version
+    @Column(nullable = false)
+    private Integer version;
+
     @Column(nullable = false)
     private String type;
 
@@ -54,6 +58,7 @@ public class Task {
     @Column
     private UUID claimToken;
 
+
     public static Task createTask(String type, Map<String, Object> params) {
         Objects.requireNonNull(type, "Task type cannot be null");
 
@@ -70,6 +75,7 @@ public class Task {
 
     private Task(String type, Map<String, Object> params) {
         this.id = null;
+        this.version = 1;
         this.type = type;
         this.params = params;
         this.status = TaskStatus.PENDING;

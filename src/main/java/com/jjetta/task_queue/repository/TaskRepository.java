@@ -21,7 +21,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             """, nativeQuery = true)
     Optional<Task> findNextTask(@Param("type") String type);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
             UPDATE tasks
             SET status = 'RUNNING',

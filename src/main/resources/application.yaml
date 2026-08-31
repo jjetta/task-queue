@@ -43,4 +43,5 @@ app:
     max-delay: 60s
     jitter: 3s
   sweeper:
-    interval-ms: 5000
+    interval: 5m
+    task-timeout: 60s

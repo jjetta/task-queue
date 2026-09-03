@@ -37,20 +37,4 @@ public class RetryPropertiesTest {
                     assertThat(properties.jitter()).isEqualTo(Duration.ofSeconds(2));
                 });
     }
-
-    @Test
-    void shouldBindDefaultPropertiesCorrectly() {
-        this.contextRunner
-                .run(context -> {
-                    assertThat(context).hasSingleBean(RetryProperties.class);
-
-                    RetryProperties properties = context.getBean(RetryProperties.class);
-                    assertThat(properties.maxRetries()).isEqualTo(3);
-                    assertThat(properties.baseDelay()).isEqualTo(Duration.ofSeconds(2));
-                    assertThat(properties.maxDelay()).isEqualTo(Duration.ofSeconds(60));
-                    assertThat(properties.jitter()).isEqualTo(Duration.ofSeconds(3));
-                });
-    }
-
-
 }

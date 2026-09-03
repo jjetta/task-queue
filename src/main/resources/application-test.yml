@@ -2,3 +2,7 @@ spring:
   datasource:
     hikari:
       maximum-pool-size: 20
+
+app:
+  sweeper:
+    task-timeout: 10s

@@ -13,8 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.swing.*;
@@ -32,8 +30,6 @@ public class TaskServiceTest {
 
     @InjectMocks
     private TaskService taskService;
-
-    private Task task;
 
     @BeforeEach
     void setUp() {

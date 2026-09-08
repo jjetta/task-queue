@@ -1,4 +1,4 @@
-package com.jjetta.task_queue.web;
+package com.jjetta.task_queue.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;

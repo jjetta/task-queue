@@ -1,6 +1,7 @@
 package com.jjetta.task_queue.service;
 
 import com.jjetta.task_queue.config.SweeperProperties;
+import com.jjetta.task_queue.dto.TaskSummaryDto;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.repository.TaskRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -22,22 +23,31 @@ public class TaskSweeper {
     private final TaskSweeperService taskSweeperService;
     private final Logger logger = LoggerFactory.getLogger(TaskSweeper.class);
 
-    public TaskSweeper(TaskRepository taskRepository,  SweeperProperties sweeperProperties, TaskSweeperService taskSweeperService) {
+    public TaskSweeper(TaskRepository taskRepository, SweeperProperties sweeperProperties, TaskSweeperService taskSweeperService) {
         this.taskRepository = taskRepository;
         this.sweeperProperties = sweeperProperties;
         this.taskSweeperService = taskSweeperService;
     }
 
     @Scheduled(fixedDelayString = "${app.sweeper.interval}")
-    public void timeoutStaleTasks() {
+    public void timeoutStaleRunningTasks() {
         Instant cutoff = Instant.now().minus(sweeperProperties.taskTimeout());
         List<Task> staleTasks = taskRepository.findStaleRunningTasks(cutoff);
-        for  (Task task : staleTasks) {
+        for (Task task : staleTasks) {
             try {
                 taskSweeperService.timeoutStaleTask(task);
             } catch (ObjectOptimisticLockingFailureException e) {
                 logger.warn("Sweeper no longer timing out task {}. Ran into exception: {}", task.getId(), e.getMessage());
             }
+        }
+    }
+
+    @Scheduled(fixedDelayString = "${app.sweeper.interval}")
+    public void evictUnclaimedTasks() {
+        Instant cutoff = Instant.now().minus(sweeperProperties.taskAgeThreshold());
+        List<TaskSummaryDto> unclaimedTasks = taskRepository.evictUnclaimedTasks(cutoff);
+        for (TaskSummaryDto taskSummary : unclaimedTasks) {
+            logger.info("Sweeper evicting task with id {} of type {}", taskSummary.id(), taskSummary.type());
         }
     }
 

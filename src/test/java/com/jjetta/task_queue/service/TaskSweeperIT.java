@@ -4,9 +4,8 @@ import com.jjetta.task_queue.TestcontainersConfiguration;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
-import com.jjetta.task_queue.web.TaskReportDto;
+import com.jjetta.task_queue.dto.TaskReportDto;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,7 +54,7 @@ public class TaskSweeperIT {
 
     @Test
     public void shouldTimeoutTasksSuccessfully() {
-        taskSweeper.timeoutStaleTasks();
+        taskSweeper.timeoutStaleRunningTasks();
         List<Task> tasks = taskRepository.findAll();
 
         for (Task task : tasks) {

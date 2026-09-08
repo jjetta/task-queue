@@ -7,7 +7,7 @@ import com.jjetta.task_queue.exception.TaskNotRunningException;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
-import com.jjetta.task_queue.web.TaskReportDto;
+import com.jjetta.task_queue.dto.TaskReportDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

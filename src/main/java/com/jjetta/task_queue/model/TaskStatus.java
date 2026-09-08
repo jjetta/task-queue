@@ -11,7 +11,7 @@ public enum TaskStatus {
     private EnumSet<TaskStatus> transitions;
 
     static {
-        PENDING.transitions = EnumSet.of(RUNNING);
+        PENDING.transitions = EnumSet.of(RUNNING, DEAD);
         RUNNING.transitions = EnumSet.of(PENDING, COMPLETED, DEAD);
         DEAD.transitions = EnumSet.of(PENDING);
 

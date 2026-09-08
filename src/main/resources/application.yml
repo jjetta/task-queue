@@ -45,3 +45,4 @@ app:
   sweeper:
     interval: 5m
     task-timeout: 60s
+    task-age-threshold: 5m

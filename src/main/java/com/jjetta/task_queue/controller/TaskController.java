@@ -2,10 +2,10 @@ package com.jjetta.task_queue.controller;
 
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.service.TaskService;
-import com.jjetta.task_queue.web.TaskClaimedDto;
-import com.jjetta.task_queue.web.TaskCreationRequestDto;
-import com.jjetta.task_queue.web.TaskCreationResponseDto;
-import com.jjetta.task_queue.web.TaskReportDto;
+import com.jjetta.task_queue.dto.TaskClaimedDto;
+import com.jjetta.task_queue.dto.TaskCreationRequestDto;
+import com.jjetta.task_queue.dto.TaskCreationResponseDto;
+import com.jjetta.task_queue.dto.TaskReportDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

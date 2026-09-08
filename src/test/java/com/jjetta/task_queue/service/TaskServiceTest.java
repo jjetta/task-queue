@@ -7,7 +7,7 @@ import com.jjetta.task_queue.exception.TaskNotRunningException;
 import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
 import com.jjetta.task_queue.model.Task;
-import com.jjetta.task_queue.web.TaskReportDto;
+import com.jjetta.task_queue.dto.TaskReportDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,7 +15,6 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.swing.*;
 import java.time.Duration;
 import java.util.*;
 

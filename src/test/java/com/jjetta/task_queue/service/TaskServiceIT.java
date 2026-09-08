@@ -6,7 +6,7 @@ import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
 import com.jjetta.task_queue.TestcontainersConfiguration;
-import com.jjetta.task_queue.web.TaskReportDto;
+import com.jjetta.task_queue.dto.TaskReportDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;

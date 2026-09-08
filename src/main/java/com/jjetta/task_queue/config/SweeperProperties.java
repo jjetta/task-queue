@@ -7,5 +7,6 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "app.sweeper")
 public record SweeperProperties(
         Duration interval,
-        Duration taskTimeout
+        Duration taskTimeout,
+        Duration taskAgeThreshold
 ) {}

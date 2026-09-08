@@ -1,5 +1,6 @@
 package com.jjetta.task_queue.repository;
 
+import com.jjetta.task_queue.dto.TaskSummaryDto;
 import com.jjetta.task_queue.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -40,4 +41,14 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                 AND claimed_at < :cutoff
             """, nativeQuery = true)
     List<Task> findStaleRunningTasks(@Param("cutoff") Instant cutoff);
+
+    @Query(value = """
+            UPDATE tasks
+            SET status = 'DEAD'
+            WHERE status = 'PENDING'
+                AND failure_count = 0
+                AND created_at < :cutoff
+            RETURNING id, type
+            """, nativeQuery = true)
+     List<TaskSummaryDto> evictUnclaimedTasks(@Param("cutoff")  Instant cutoff);
 }

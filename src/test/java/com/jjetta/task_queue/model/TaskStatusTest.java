@@ -22,7 +22,7 @@ public class TaskStatusTest {
                 arguments(TaskStatus.PENDING,   TaskStatus.PENDING,   false),
                 arguments(TaskStatus.PENDING,   TaskStatus.RUNNING,   true),
                 arguments(TaskStatus.PENDING,   TaskStatus.COMPLETED, false),
-                arguments(TaskStatus.PENDING,   TaskStatus.DEAD,      false),
+                arguments(TaskStatus.PENDING,   TaskStatus.DEAD,      true),
 
                 arguments(TaskStatus.RUNNING,   TaskStatus.PENDING,   true),
                 arguments(TaskStatus.RUNNING,   TaskStatus.RUNNING,   false),

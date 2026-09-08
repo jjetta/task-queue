@@ -174,6 +174,7 @@ public class Task {
             throw new IllegalStateException("Only Tasks in a DEAD state can be replayed.");
         }
         this.transitionTo(TaskStatus.PENDING);
+        this.createdAt = Instant.now();
         this.failureCount = 0;
         this.nextRetryAt = null;
     }

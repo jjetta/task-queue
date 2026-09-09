@@ -64,6 +64,7 @@ public class TaskSweeperIT {
         }
     }
 
+    @Test
     public void shouldNotTimeoutTaskIfItHasBeenReported() throws Exception {
         Task task =  Task.createTask("password", Map.of("arg1", "param1"));
         taskRepository.save(task);

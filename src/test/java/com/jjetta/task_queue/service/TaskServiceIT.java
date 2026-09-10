@@ -2,6 +2,7 @@ package com.jjetta.task_queue.service;
 
 import com.jjetta.task_queue.exception.InvalidTaskClaimTokenException;
 import com.jjetta.task_queue.exception.TaskNotRunningException;
+import com.jjetta.task_queue.metrics.TaskMetricsRecorder;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
@@ -31,6 +32,9 @@ class TaskServiceIT {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private TaskMetricsRecorder taskMetricsRecorder;
 
     @BeforeEach
     public void setup() {
@@ -90,6 +94,7 @@ class TaskServiceIT {
 
         Task task = optionalTask.get();
         Long taskId = task.getId();
+        assertThat(task.getClaimedAt()).isNotNull();
 
         UUID reportToken = task.getClaimToken();
 
@@ -98,6 +103,7 @@ class TaskServiceIT {
                 .claimToken(reportToken)
                 .build();
 
+        System.out.println(task.getClaimedAt());
         taskService.reportTaskOutcome(taskId, taskReport);
 
         Task refetchedTask = taskService.getTaskById(taskId);

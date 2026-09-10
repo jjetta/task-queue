@@ -2,6 +2,7 @@ package com.jjetta.task_queue.repository;
 
 import com.jjetta.task_queue.dto.TaskSummaryDto;
 import com.jjetta.task_queue.model.Task;
+import com.jjetta.task_queue.model.TaskStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -51,4 +52,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             RETURNING id, type
             """, nativeQuery = true)
      List<TaskSummaryDto> evictUnclaimedTasks(@Param("cutoff")  Instant cutoff);
+
+    List<Task> findByStatus(TaskStatus status);
 }

@@ -13,6 +13,7 @@ import com.jjetta.task_queue.dto.TaskReportDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,6 +62,7 @@ public class TaskService {
 
    public void reportTaskOutcome(Long id, TaskReportDto taskReport) {
         Task executedTask = getTaskById(id);
+        System.out.println(executedTask.getClaimedAt());
         if (executedTask.getStatus() != TaskStatus.RUNNING) {
             throw new TaskNotRunningException(id, executedTask.getStatus());
         }
@@ -70,9 +72,10 @@ public class TaskService {
         }
 
         if (taskReport.outcome() == TaskReportDto.Outcome.SUCCESS) {
+            Instant claimedAt = executedTask.getClaimedAt();
             executedTask.recordSuccess();
             metricsRecorder.recordSuccess();
-            metricsRecorder.recordCompletedTaskLatency(executedTask.getClaimedAt(), executedTask.getCompletedAt());
+            metricsRecorder.recordCompletedTaskLatency(claimedAt, executedTask.getCompletedAt());
         } else {
             executedTask.recordFailure(retryProperties.maxRetries(), retryProperties.baseDelay(), retryProperties.maxDelay(), retryProperties.jitter());
             metricsRecorder.recordFailure();

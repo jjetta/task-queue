@@ -115,20 +115,25 @@ public class TaskControllerTest {
 
     @Test
     public void shouldPullNextTaskSuccessfully() throws Exception {
-        String typeParam = "background-job";
+        String type = "background-job";
+        Map<String, Object> params =  new HashMap<>();
+        UUID claimToken = UUID.randomUUID();
 
-        Task testTask = Task.createTask(typeParam, Map.of());
+        Task testTask = Task.createTask(type, params);
         ReflectionTestUtils.setField(testTask, "id", 3L);
+        ReflectionTestUtils.setField(testTask, "claimToken", claimToken);
 
-        Mockito.when(taskService.pullAndClaimTask(typeParam))
+        Mockito.when(taskService.pullAndClaimTask(type))
                 .thenReturn(Optional.of(testTask));
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/v1/tasks/next?type={typeParam}", typeParam))
+        mockMvc.perform(MockMvcRequestBuilders.get("/v1/tasks/next?type={type}", type))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(3L))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.type").value(typeParam));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.type").value(type))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.params").value(params))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.claimToken").value(claimToken.toString()));
 
-        Mockito.verify(taskService).pullAndClaimTask(typeParam);
+        Mockito.verify(taskService).pullAndClaimTask(type);
     }
 
     @Test

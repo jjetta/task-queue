@@ -53,6 +53,7 @@ public class TaskController {
                     .id(task.getId())
                     .type(task.getType())
                     .params(task.getParams())
+                    .claimToken(task.getClaimToken())
                     .build());
         } else {
             return ResponseEntity.noContent().build();

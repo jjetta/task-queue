@@ -146,7 +146,7 @@ class TaskServiceIT {
 
         assertThatThrownBy(() -> taskService.reportTaskOutcome(task.getId(), taskReport))
                 .isInstanceOf(TaskNotRunningException.class)
-                .hasMessageContaining("Attempt to report execution outcome on task with id: " + task.getId() + ", but said task is " + task.getStatus());
+                .hasMessageContaining("Attempt to report execution outcome on task with id: " + task.getId() + ", but its status is " + task.getStatus());
 
         Task refetchedTask = taskService.getTaskById(task.getId());
 

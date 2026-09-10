@@ -10,5 +10,5 @@ public record TaskClaimedDto(
         Long id,
         String type,
         Map<String, Object> params,
-        UUID reportToken
+        UUID claimToken
 ) {}

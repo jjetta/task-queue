@@ -54,4 +54,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      List<TaskSummaryDto> evictUnclaimedTasks(@Param("cutoff")  Instant cutoff);
 
     List<Task> findByStatus(TaskStatus status);
+
+    Integer countByStatus(TaskStatus status);
 }

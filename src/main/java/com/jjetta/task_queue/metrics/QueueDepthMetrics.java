@@ -18,7 +18,8 @@ public class QueueDepthMetrics implements MeterBinder {
 
     @Override
     public void bindTo(MeterRegistry meterRegistry) {
-        Gauge.builder("queue.depth", () -> taskRepository.countByStatus(TaskStatus.PENDING))
+        final String gaugeName = "queue.depth";
+        Gauge.builder(gaugeName, () -> taskRepository.countByStatus(TaskStatus.PENDING))
                 .description("Current number of PENDING tasks")
                 .register(meterRegistry);
     }

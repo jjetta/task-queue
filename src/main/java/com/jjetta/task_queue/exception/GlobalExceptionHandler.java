@@ -89,4 +89,17 @@ public class GlobalExceptionHandler {
 
         return problem;
     }
+
+    @ExceptionHandler(TaskNotDeadException.class)
+    public ProblemDetail handleTaskNotDeadException(TaskNotDeadException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+        );
+
+        problem.setTitle("Task Not Dead");
+        problem.setProperty("timestamp", Instant.now());
+
+        return problem;
+    }
 }

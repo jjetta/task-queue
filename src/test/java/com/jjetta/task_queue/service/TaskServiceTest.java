@@ -5,11 +5,11 @@ import com.jjetta.task_queue.exception.InvalidTaskClaimTokenException;
 import com.jjetta.task_queue.exception.TaskNotDeadException;
 import com.jjetta.task_queue.exception.TaskNotFoundException;
 import com.jjetta.task_queue.exception.TaskNotRunningException;
+import com.jjetta.task_queue.metrics.TaskMetricsRecorder;
 import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.dto.TaskReportDto;
-import io.netty.util.internal.RefCnt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +17,6 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.sql.Ref;
 import java.time.Duration;
 import java.util.*;
 
@@ -29,6 +28,9 @@ public class TaskServiceTest {
 
     @Mock
     private TaskRepository taskRepository;
+
+    @Mock
+    private TaskMetricsRecorder metricsRecorder;
 
     @InjectMocks
     private TaskService taskService;
@@ -42,7 +44,7 @@ public class TaskServiceTest {
                 Duration.ofSeconds(3)
         );
 
-        taskService = new TaskService(taskRepository, retryProperties);
+        taskService = new TaskService(taskRepository, metricsRecorder, retryProperties);
     }
 
     @Test
@@ -54,9 +56,10 @@ public class TaskServiceTest {
 
         Mockito.when(taskRepository.save(Mockito.any(Task.class))).thenAnswer(AdditionalAnswers.returnsFirstArg());
 
-        Task testTask = taskService.createTask(type, params);
+        taskService.createTask(type, params);
 
         Mockito.verify(taskRepository).save(taskCaptor.capture());
+
         Task createdTask = taskCaptor.getValue();
 
         assertThat(createdTask.getType()).isEqualTo(type);

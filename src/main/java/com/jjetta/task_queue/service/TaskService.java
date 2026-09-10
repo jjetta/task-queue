@@ -5,6 +5,7 @@ import com.jjetta.task_queue.exception.InvalidTaskClaimTokenException;
 import com.jjetta.task_queue.exception.TaskNotDeadException;
 import com.jjetta.task_queue.exception.TaskNotFoundException;
 import com.jjetta.task_queue.exception.TaskNotRunningException;
+import com.jjetta.task_queue.metrics.TaskMetricsRecorder;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
@@ -20,10 +21,12 @@ import java.util.Optional;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final TaskMetricsRecorder metricsRecorder;
     private final RetryProperties retryProperties;
 
-    public TaskService(TaskRepository taskRepository, RetryProperties retryProperties) {
+    public TaskService(TaskRepository taskRepository, TaskMetricsRecorder metricsRecorder, RetryProperties retryProperties) {
         this.taskRepository = taskRepository;
+        this.metricsRecorder = metricsRecorder;
         this.retryProperties = retryProperties;
     }
 
@@ -68,8 +71,11 @@ public class TaskService {
 
         if (taskReport.outcome() == TaskReportDto.Outcome.SUCCESS) {
             executedTask.recordSuccess();
+            metricsRecorder.recordSuccess();
+            metricsRecorder.recordCompletedTaskLatency(executedTask.getClaimedAt(), executedTask.getCompletedAt());
         } else {
             executedTask.recordFailure(retryProperties.maxRetries(), retryProperties.baseDelay(), retryProperties.maxDelay(), retryProperties.jitter());
+            metricsRecorder.recordFailure();
         }
         taskRepository.save(executedTask);
     }

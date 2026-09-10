@@ -272,7 +272,7 @@ public class TaskServiceTest {
 
         assertThatThrownBy(() -> taskService.reportTaskOutcome(id, taskReport))
                 .isInstanceOf(TaskNotRunningException.class)
-                .hasMessage("Attempt to report execution outcome on task with id: " + id + ", but said task is " + testTask.getStatus());
+                .hasMessage("Attempt to report execution outcome on task with id: " + id + ", but its status is " + testTask.getStatus());
 
         Mockito.verify(taskRepository, Mockito.never()).save(testTask);
     }

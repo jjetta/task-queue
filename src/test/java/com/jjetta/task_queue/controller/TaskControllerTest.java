@@ -1,6 +1,7 @@
 package com.jjetta.task_queue.controller;
 
 import com.jjetta.task_queue.exception.InvalidTaskClaimTokenException;
+import com.jjetta.task_queue.exception.TaskNotDeadException;
 import com.jjetta.task_queue.exception.TaskNotFoundException;
 import com.jjetta.task_queue.exception.TaskNotRunningException;
 import com.jjetta.task_queue.model.Task;
@@ -22,9 +23,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @WebMvcTest(TaskController.class)
 public class TaskControllerTest {
@@ -246,6 +245,52 @@ public class TaskControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
 
         Mockito.verifyNoInteractions(taskService);
+    }
+
+    @Test
+    public void shouldGetDeadTasksSuccessfully() throws Exception {
+        List<Task> tasks = new ArrayList<>();
+        for (long i = 0; i < 5; i++) {
+            Task task = Task.createTask("background", Map.of());
+            ReflectionTestUtils.setField(task, "id", i + 1);
+            ReflectionTestUtils.setField(task, "status", TaskStatus.DEAD);
+            tasks.add(task);
+        }
+
+        Mockito.when(taskService.getDeadTasks()).thenReturn(tasks);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/v1/tasks/dead"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(tasks.size()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.[0].id").value(tasks.getFirst().getId()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.[0].type").value("background"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.[0].status").value(TaskStatus.DEAD.name()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.[0].failureCount").value(tasks.getFirst().getFailureCount()));
+
+        Mockito.verify(taskService).getDeadTasks();
+    }
+
+    @Test
+    public void shouldReplayTaskSuccessfully() throws Exception {
+        Long id = 3L;
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/v1/tasks/{id}/replay", id))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+        Mockito.verify(taskService).replayTask(id);
+    }
+
+    @Test
+    public void shouldThrowTaskNotDeadExceptionWhenAttemptingToReplayTask() throws Exception {
+        Long id = 3L;
+        TaskNotDeadException ex = new TaskNotDeadException(id, TaskStatus.PENDING);
+        Mockito.doThrow(ex)
+                .when(taskService).replayTask(id);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/v1/tasks/{id}/replay", id))
+                .andExpect(MockMvcResultMatchers.status().isConflict());
+
+        Mockito.verify(taskService).replayTask(id);
     }
 
 }

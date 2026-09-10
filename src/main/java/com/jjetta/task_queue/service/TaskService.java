@@ -2,6 +2,7 @@ package com.jjetta.task_queue.service;
 
 import com.jjetta.task_queue.config.RetryProperties;
 import com.jjetta.task_queue.exception.InvalidTaskClaimTokenException;
+import com.jjetta.task_queue.exception.TaskNotDeadException;
 import com.jjetta.task_queue.exception.TaskNotFoundException;
 import com.jjetta.task_queue.exception.TaskNotRunningException;
 import com.jjetta.task_queue.model.Task;
@@ -11,6 +12,7 @@ import com.jjetta.task_queue.dto.TaskReportDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -54,7 +56,7 @@ public class TaskService {
                 .orElseThrow(() -> new IllegalStateException("Pending task discovered, locked, and claimed, but not found.")));
     }
 
-    public void reportTaskOutcome(Long id, TaskReportDto taskReport) {
+   public void reportTaskOutcome(Long id, TaskReportDto taskReport) {
         Task executedTask = getTaskById(id);
         if (executedTask.getStatus() != TaskStatus.RUNNING) {
             throw new TaskNotRunningException(id, executedTask.getStatus());
@@ -70,5 +72,18 @@ public class TaskService {
             executedTask.recordFailure(retryProperties.maxRetries(), retryProperties.baseDelay(), retryProperties.maxDelay(), retryProperties.jitter());
         }
         taskRepository.save(executedTask);
+    }
+
+    public List<Task> getDeadTasks() {
+        return taskRepository.findByStatus(TaskStatus.DEAD);
+    }
+
+    public void replayTask(Long id) {
+        Task task = getTaskById(id);
+        if (task.getStatus() != TaskStatus.DEAD) {
+            throw new TaskNotDeadException(id, task.getStatus());
+        }
+        task.replay();
+        taskRepository.save(task);
     }
 }

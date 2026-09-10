@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -39,9 +40,8 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTask(@PathVariable Long id) {
-        Task task = taskService.getTaskById(id);
-        return ResponseEntity.ok(task);
+    public Task getTask(@PathVariable Long id) {
+        return taskService.getTaskById(id);
     }
 
     @GetMapping("/next")
@@ -64,5 +64,17 @@ public class TaskController {
     public void reportExecutionResult(@PathVariable Long id, @RequestBody @Valid TaskReportDto taskReport) {
         taskService.reportTaskOutcome(id, taskReport);
     }
+
+    @GetMapping("/dead")
+    public List<Task> getDeadTasks() {
+        return taskService.getDeadTasks();
+    }
+
+    @PostMapping("/{id}/replay")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void replayTask(@PathVariable Long id) {
+        taskService.replayTask(id);
+    }
+
 
 }

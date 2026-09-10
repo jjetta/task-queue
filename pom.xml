@@ -8,27 +8,40 @@
 		<version>4.1.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+
 	<groupId>com.jjetta</groupId>
 	<artifactId>task-queue</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
+
+    <!-- Info -->
+	<name>Distributed Task Queue</name>
+	<description>A distributed task queue backend built with Spring Boot and Redis.</description>
+	<url>https://github.com/jjetta/task-queue</url>
+
+    <!-- Licensing -->
 	<licenses>
-		<license/>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
 	</licenses>
+
 	<developers>
 		<developer/>
 	</developers>
+
 	<scm>
 		<connection/>
 		<developerConnection/>
 		<tag/>
 		<url/>
 	</scm>
+
 	<properties>
 		<java.version>21</java.version>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

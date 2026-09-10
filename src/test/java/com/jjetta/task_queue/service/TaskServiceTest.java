@@ -2,12 +2,14 @@ package com.jjetta.task_queue.service;
 
 import com.jjetta.task_queue.config.RetryProperties;
 import com.jjetta.task_queue.exception.InvalidTaskClaimTokenException;
+import com.jjetta.task_queue.exception.TaskNotDeadException;
 import com.jjetta.task_queue.exception.TaskNotFoundException;
 import com.jjetta.task_queue.exception.TaskNotRunningException;
 import com.jjetta.task_queue.model.TaskStatus;
 import com.jjetta.task_queue.repository.TaskRepository;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.dto.TaskReportDto;
+import io.netty.util.internal.RefCnt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +17,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.sql.Ref;
 import java.time.Duration;
 import java.util.*;
 
@@ -301,5 +304,59 @@ public class TaskServiceTest {
                 .hasMessage("Invalid task claim token: " + reportUuid + " for task with id: " + id);
 
         Mockito.verify(taskRepository, Mockito.never()).save(testTask);
+    }
+
+    @Test
+    public void shouldGetDeadTasksSuccessfully() {
+        List<Task> tasks = new ArrayList<>();
+        for (long i = 0; i < 5; i++) {
+            Task task = Task.createTask("background-job", Map.of());
+            ReflectionTestUtils.setField(task, "id", i + 1);
+            ReflectionTestUtils.setField(task, "status", TaskStatus.DEAD);
+            tasks.add(task);
+        }
+
+        Mockito.when(taskRepository.findByStatus(TaskStatus.DEAD))
+                .thenReturn(tasks);
+
+        List<Task> deadTasks = taskService.getDeadTasks();
+        assertThat(deadTasks).isEqualTo(tasks);
+
+        Mockito.verify(taskRepository).findByStatus(TaskStatus.DEAD);
+
+    }
+
+    @Test
+    public void shouldReplayDeadTaskSuccessfully() {
+        Long id = 3L;
+        Task task = Task.createTask("background-job", Map.of());
+        ReflectionTestUtils.setField(task, "id", id);
+        ReflectionTestUtils.setField(task, "status", TaskStatus.DEAD);
+
+        Mockito.when(taskRepository.findById(id))
+                .thenReturn(Optional.of(task));
+
+        taskService.replayTask(id);
+
+        assertThat(task.getStatus()).isEqualTo(TaskStatus.PENDING);
+        Mockito.verify(taskRepository).findById(id);
+        Mockito.verify(taskRepository).save(task);
+    }
+
+    @Test
+    public void shouldThrowTaskNotDeadExceptionWhenAttemptingToReplayTask() {
+        Long id = 3L;
+        Task task = Task.createTask("background-job", Map.of());
+        ReflectionTestUtils.setField(task, "id", id);
+
+        Mockito.when(taskRepository.findById(id))
+                .thenReturn(Optional.of(task));
+
+        assertThatThrownBy(() -> taskService.replayTask(id))
+                .isInstanceOf(TaskNotDeadException.class)
+                .hasMessage("Tried to replay task with id " + id + ", but its status is " + task.getStatus());
+
+
+        Mockito.verify(taskRepository, Mockito.never()).save(task);
     }
 }

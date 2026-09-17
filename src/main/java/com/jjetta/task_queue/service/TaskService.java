@@ -33,8 +33,7 @@ public class TaskService {
 
     public Task createTask(String type, Map<String, Object> params) {
         Task createdTask = Task.createTask(type, params);
-        createdTask = taskRepository.save(createdTask);
-        return createdTask;
+        return taskRepository.save(createdTask);
     }
 
     public Task getTaskById(Long id) {

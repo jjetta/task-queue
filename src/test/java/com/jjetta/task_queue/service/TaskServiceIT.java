@@ -87,7 +87,7 @@ class TaskServiceIT {
     }
 
     @Test
-    void shouldReportTaskOutcomeSuccessfully() throws Exception {
+    void shouldReportTaskOutcomeSuccessfully() {
         String type = "background-job";
         Optional<Task> optionalTask = taskService.pullAndClaimTask(type);
         assertThat(optionalTask).isPresent();
@@ -114,7 +114,7 @@ class TaskServiceIT {
     }
 
     @Test
-    void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingTaskOutcome() throws Exception {
+    void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingTaskOutcome() {
         String type = "background-job";
         Optional<Task> optionalTask = taskService.pullAndClaimTask(type);
         assertThat(optionalTask).isPresent();
@@ -141,9 +141,9 @@ class TaskServiceIT {
     }
 
     @Test
-    void shouldThrowTaskNotRunningExceptionWhenReportingTaskOutcome() throws Exception {
+    void shouldThrowTaskNotRunningExceptionWhenReportingTaskOutcome() {
         List<Task> tasks = taskRepository.findAll();
-        Task task = tasks.get(0);
+        Task task = tasks.getFirst();
 
         TaskReportDto taskReport = TaskReportDto.builder()
                 .outcome(TaskReportDto.Outcome.SUCCESS)

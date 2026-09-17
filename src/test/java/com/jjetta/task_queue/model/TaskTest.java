@@ -20,9 +20,7 @@ public class TaskTest {
 
     @Test
     void shouldNotCreateTaskWithNullType() {
-        assertThatThrownBy(() -> {
-            createTask(null, Map.of());
-        })
+        assertThatThrownBy(() -> createTask(null, Map.of()))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("Task type cannot be null");
     }
@@ -52,9 +50,7 @@ public class TaskTest {
     void invalidTaskStatusTransition() {
         Task task = createTask("background-job", Map.of());
         TaskStatus expectedStatus = task.getStatus();
-        assertThatThrownBy(() -> {
-            task.transitionTo(TaskStatus.COMPLETED);
-        })
+        assertThatThrownBy(() -> task.transitionTo(TaskStatus.COMPLETED))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Cannot transition from " + expectedStatus + " to " + TaskStatus.COMPLETED);
         assertThat(task.getStatus()).isEqualTo(expectedStatus);

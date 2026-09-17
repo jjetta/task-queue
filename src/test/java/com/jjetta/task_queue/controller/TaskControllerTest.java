@@ -26,7 +26,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.*;
 
 @WebMvcTest(TaskController.class)
-public class TaskControllerTest {
+class TaskControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -38,7 +38,7 @@ public class TaskControllerTest {
     private TaskService taskService;
 
     @Test
-    public void shouldCreateTaskSuccessfully() throws Exception {
+    void shouldCreateTaskSuccessfully() throws Exception {
         TaskCreationRequestDto requestDto = TaskCreationRequestDto.builder()
                 .type("background-job")
                 .params(Map.of())
@@ -65,7 +65,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void should400OnInvalidTaskCreationRequest() throws Exception {
+    void should400OnInvalidTaskCreationRequest() throws Exception {
         TaskCreationRequestDto requestDto = TaskCreationRequestDto.builder()
                 .type(null)
                 .params(Map.of())
@@ -82,7 +82,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldGetTaskSuccessfully() throws Exception {
+    void shouldGetTaskSuccessfully() throws Exception {
         Long id = 1L;
 
         Task testTask = Task.createTask("background-job", Map.of());
@@ -100,7 +100,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void should404OnTaskNotFoundWhenGettingTask() throws Exception {
+    void should404OnTaskNotFoundWhenGettingTask() throws Exception {
         Long id = 1L;
 
         TaskNotFoundException ex = new TaskNotFoundException(id);
@@ -114,7 +114,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldPullNextTaskSuccessfully() throws Exception {
+    void shouldPullNextTaskSuccessfully() throws Exception {
         String type = "background-job";
         Map<String, Object> params =  new HashMap<>();
         UUID claimToken = UUID.randomUUID();
@@ -137,7 +137,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldReceiveNoContentWhenPullingNextTask() throws Exception {
+    void shouldReceiveNoContentWhenPullingNextTask() throws Exception {
         String typeParam = "background-job";
 
         Mockito.when(taskService.pullAndClaimTask(typeParam))
@@ -150,7 +150,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldReportExecutionResultSuccessfully() throws Exception {
+    void shouldReportExecutionResultSuccessfully() throws Exception {
         Long id = 3L;
         UUID uuid = UUID.randomUUID();
 
@@ -170,7 +170,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldThrowTaskNotRunningExceptionWhenReportingExecutionResult() throws Exception {
+    void shouldThrowTaskNotRunningExceptionWhenReportingExecutionResult() throws Exception {
         Long id = 3L;
 
         TaskReportDto taskReport = TaskReportDto.builder()
@@ -192,7 +192,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingExecutionResult() throws Exception {
+    void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingExecutionResult() throws Exception {
         Long id = 3L;
         UUID uuid = UUID.randomUUID();
         TaskReportDto taskReport = TaskReportDto.builder()
@@ -214,7 +214,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void should400WhenReportingExecutionResultNullOutcome() throws Exception {
+    void should400WhenReportingExecutionResultNullOutcome() throws Exception {
         Long id = 3L;
 
         UUID reportUuid = UUID.randomUUID();
@@ -234,7 +234,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void should400WhenReportingExecutionResultNullUuid() throws Exception {
+    void should400WhenReportingExecutionResultNullUuid() throws Exception {
         Long id = 3L;
 
         TaskReportDto taskReport = TaskReportDto.builder()
@@ -253,7 +253,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldGetDeadTasksSuccessfully() throws Exception {
+    void shouldGetDeadTasksSuccessfully() throws Exception {
         List<Task> tasks = new ArrayList<>();
         for (long i = 0; i < 5; i++) {
             Task task = Task.createTask("background", Map.of());
@@ -276,7 +276,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldReplayTaskSuccessfully() throws Exception {
+    void shouldReplayTaskSuccessfully() throws Exception {
         Long id = 3L;
 
         mockMvc.perform(MockMvcRequestBuilders.post("/v1/tasks/{id}/replay", id))
@@ -286,7 +286,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void shouldThrowTaskNotDeadExceptionWhenAttemptingToReplayTask() throws Exception {
+    void shouldThrowTaskNotDeadExceptionWhenAttemptingToReplayTask() throws Exception {
         Long id = 3L;
         TaskNotDeadException ex = new TaskNotDeadException(id, TaskStatus.PENDING);
         Mockito.doThrow(ex)

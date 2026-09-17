@@ -9,7 +9,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RetryPropertiesTest {
+class RetryPropertiesTest {
 
     @Configuration(proxyBeanMethods = false)
     @EnableConfigurationProperties(RetryProperties.class)

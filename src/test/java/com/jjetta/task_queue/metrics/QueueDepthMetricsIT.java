@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
-public class QueueDepthMetricsIT {
+class QueueDepthMetricsIT {
 
     @Autowired
     MeterRegistry meterRegistry;
@@ -27,7 +27,7 @@ public class QueueDepthMetricsIT {
     private TaskRepository taskRepository;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         taskRepository.deleteAll();
         int numberOfPendingTasks = 5;
         int numberOfRunningTasks = 5;
@@ -45,7 +45,7 @@ public class QueueDepthMetricsIT {
     }
 
     @Test
-    public void shouldMeasureQueueDepthCorrectly() {
+    void shouldMeasureQueueDepthCorrectly() {
         final int numberOfPendingTasks = 5;
         final String gaugeName = "queue.depth";
         assertThat(meterRegistry.get(gaugeName).gauge().value()).isEqualTo(numberOfPendingTasks);

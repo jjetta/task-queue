@@ -37,7 +37,7 @@ class TaskServiceIT {
     private TaskMetricsRecorder taskMetricsRecorder;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         taskRepository.deleteAll();
         int numberOfTasks = 10;
 
@@ -48,7 +48,7 @@ class TaskServiceIT {
     }
 
     @RepeatedTest(value = 10)
-    public void shouldPullAndClaimTaskConcurrently() throws Exception {
+    void shouldPullAndClaimTaskConcurrently() throws Exception {
         int numberOfThreads = 10;
         ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
         CountDownLatch latch = new CountDownLatch(1);
@@ -87,7 +87,7 @@ class TaskServiceIT {
     }
 
     @Test
-    public void shouldReportTaskOutcomeSuccessfully() throws Exception {
+    void shouldReportTaskOutcomeSuccessfully() throws Exception {
         String type = "background-job";
         Optional<Task> optionalTask = taskService.pullAndClaimTask(type);
         assertThat(optionalTask).isPresent();
@@ -114,7 +114,7 @@ class TaskServiceIT {
     }
 
     @Test
-    public void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingTaskOutcome() throws Exception {
+    void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingTaskOutcome() throws Exception {
         String type = "background-job";
         Optional<Task> optionalTask = taskService.pullAndClaimTask(type);
         assertThat(optionalTask).isPresent();
@@ -141,7 +141,7 @@ class TaskServiceIT {
     }
 
     @Test
-    public void shouldThrowTaskNotRunningExceptionWhenReportingTaskOutcome() throws Exception {
+    void shouldThrowTaskNotRunningExceptionWhenReportingTaskOutcome() throws Exception {
         List<Task> tasks = taskRepository.findAll();
         Task task = tasks.get(0);
 

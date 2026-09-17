@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest()
 @ActiveProfiles("test")
-public class TaskSweeperIT {
+class TaskSweeperIT {
 
     @Autowired
     private TaskRepository taskRepository;
@@ -41,7 +41,7 @@ public class TaskSweeperIT {
     private TaskService taskService;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         taskRepository.deleteAll();
 
         Task staleTask = Task.createTask("stale-job", Map.of("arg1", "param1"));
@@ -53,7 +53,7 @@ public class TaskSweeperIT {
     }
 
     @Test
-    public void shouldTimeoutTasksSuccessfully() {
+    void shouldTimeoutTasksSuccessfully() {
         taskSweeper.timeoutStaleRunningTasks();
         List<Task> tasks = taskRepository.findAll();
 
@@ -65,7 +65,7 @@ public class TaskSweeperIT {
     }
 
     @Test
-    public void shouldNotTimeoutTaskIfItHasBeenReported() throws Exception {
+    void shouldNotTimeoutTaskIfItHasBeenReported() throws Exception {
         Task task =  Task.createTask("password", Map.of("arg1", "param1"));
         taskRepository.save(task);
 
@@ -91,7 +91,7 @@ public class TaskSweeperIT {
     }
 
     @Test
-    public void shouldEvictTaskSuccessfully() {
+    void shouldEvictTaskSuccessfully() {
         // Tasks eligible for eviction meet the following criteria:
         // - they have a PENDING status
         // - they have a failureCount of ZERO

@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(MockitoExtension.class)
-public class TaskServiceTest {
+class TaskServiceTest {
 
     @Mock
     private TaskRepository taskRepository;
@@ -48,7 +48,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldCreateTaskSuccessfully() {
+    void shouldCreateTaskSuccessfully() {
         String type = "background-job";
         Map<String, Object> params = new HashMap<>();
 
@@ -67,7 +67,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldGetTaskSuccessfully() {
+    void shouldGetTaskSuccessfully() {
         Task existingTask = Task.createTask("background-job", Map.of());
         ReflectionTestUtils.setField(existingTask, "id", 1L);
 
@@ -80,7 +80,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldThrowTaskNotFoundExceptionWhenGettingTask() {
+    void shouldThrowTaskNotFoundExceptionWhenGettingTask() {
         Long id = 1L;
 
         Mockito.when(taskRepository.findById(id)).thenReturn(Optional.empty());
@@ -93,7 +93,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldPullAndClaimTaskSuccessfully() {
+    void shouldPullAndClaimTaskSuccessfully() {
         String typeParam = "background-job";
         Long id = 3L;
 
@@ -120,7 +120,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldPullAndClaimEmptyTaskSuccessfully() {
+    void shouldPullAndClaimEmptyTaskSuccessfully() {
         String typeParam = "background-job";
         Mockito.when(taskRepository.findNextTask(Mockito.anyString()))
                 .thenReturn(Optional.empty());
@@ -134,7 +134,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldThrowIllegalStateExceptionWhenTaskClaimFails() {
+    void shouldThrowIllegalStateExceptionWhenTaskClaimFails() {
         String typeParam = "background-job";
         Long id = 3L;
 
@@ -155,7 +155,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldThrowIllegalStateExceptionWhenTaskVanishesAfterClaiming() {
+    void shouldThrowIllegalStateExceptionWhenTaskVanishesAfterClaiming() {
         String typeParam = "background-job";
         Long id = 3L;
 
@@ -177,7 +177,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldReportSuccessfulTaskOutcome() {
+    void shouldReportSuccessfulTaskOutcome() {
         Long id = 3L;
         UUID taskUuid = UUID.randomUUID();
 
@@ -204,7 +204,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldReportFailedTaskOutcomeAndReturnToPendingState() {
+    void shouldReportFailedTaskOutcomeAndReturnToPendingState() {
         Long id = 3L;
         UUID taskUuid = UUID.randomUUID();
 
@@ -231,7 +231,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldReportFailedTaskOutcomeAndReturnToDeadState() {
+    void shouldReportFailedTaskOutcomeAndReturnToDeadState() {
         Long id = 3L;
         UUID taskUuid = UUID.randomUUID();
 
@@ -260,7 +260,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldThrowTaskNotRunningExceptionWhenReportingTaskOutcome() {
+    void shouldThrowTaskNotRunningExceptionWhenReportingTaskOutcome() {
         Long id = 3L;
         UUID taskUuid = UUID.randomUUID();
 
@@ -284,7 +284,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingTaskOutcome() {
+    void shouldThrowInvalidTaskClaimTokenExceptionWhenReportingTaskOutcome() {
         Long id = 3L;
         UUID taskUuid = UUID.randomUUID();
 
@@ -310,7 +310,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldGetDeadTasksSuccessfully() {
+    void shouldGetDeadTasksSuccessfully() {
         List<Task> tasks = new ArrayList<>();
         for (long i = 0; i < 5; i++) {
             Task task = Task.createTask("background-job", Map.of());
@@ -330,7 +330,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldReplayDeadTaskSuccessfully() {
+    void shouldReplayDeadTaskSuccessfully() {
         Long id = 3L;
         Task task = Task.createTask("background-job", Map.of());
         ReflectionTestUtils.setField(task, "id", id);
@@ -347,7 +347,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void shouldThrowTaskNotDeadExceptionWhenAttemptingToReplayTask() {
+    void shouldThrowTaskNotDeadExceptionWhenAttemptingToReplayTask() {
         Long id = 3L;
         Task task = Task.createTask("background-job", Map.of());
         ReflectionTestUtils.setField(task, "id", id);

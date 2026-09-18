@@ -4,7 +4,6 @@ import com.jjetta.task_queue.config.SweeperProperties;
 import com.jjetta.task_queue.dto.TaskSummaryDto;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.repository.TaskRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -15,13 +14,12 @@ import java.time.Instant;
 import java.util.List;
 
 @Service
-@Slf4j
 public class TaskSweeper {
 
     private final TaskRepository taskRepository;
     private final SweeperProperties sweeperProperties;
     private final TaskSweeperService taskSweeperService;
-    private final Logger logger = LoggerFactory.getLogger(TaskSweeper.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskSweeper.class);
 
     public TaskSweeper(TaskRepository taskRepository, SweeperProperties sweeperProperties, TaskSweeperService taskSweeperService) {
         this.taskRepository = taskRepository;
@@ -36,8 +34,9 @@ public class TaskSweeper {
         for (Task task : staleTasks) {
             try {
                 taskSweeperService.timeoutStaleTask(task);
+                logger.atInfo().log("Sweeper timed out task with id: {}",  task.getId());
             } catch (ObjectOptimisticLockingFailureException e) {
-                logger.warn("Sweeper no longer timing out task {}. Ran into exception: {}", task.getId(), e.getMessage());
+                logger.atWarn().log("Sweeper no longer timing out task {}. Ran into exception: {}", task.getId(), e.getMessage());
             }
         }
     }
@@ -47,7 +46,7 @@ public class TaskSweeper {
         Instant cutoff = Instant.now().minus(sweeperProperties.taskAgeThreshold());
         List<TaskSummaryDto> unclaimedTasks = taskRepository.evictUnclaimedTasks(cutoff);
         for (TaskSummaryDto taskSummary : unclaimedTasks) {
-            logger.info("Sweeper evicting task with id {} of type {}", taskSummary.id(), taskSummary.type());
+            logger.atInfo().log("Sweeper evicting task with id {} of type {}", taskSummary.id(), taskSummary.type());
         }
     }
 

@@ -61,7 +61,6 @@ public class TaskService {
 
    public void reportTaskOutcome(Long id, TaskReportDto taskReport) {
         Task executedTask = getTaskById(id);
-        System.out.println(executedTask.getClaimedAt());
         if (executedTask.getStatus() != TaskStatus.RUNNING) {
             throw new TaskNotRunningException(id, executedTask.getStatus());
         }

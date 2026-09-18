@@ -7,6 +7,8 @@ import com.jjetta.task_queue.dto.TaskCreationRequestDto;
 import com.jjetta.task_queue.dto.TaskCreationResponseDto;
 import com.jjetta.task_queue.dto.TaskReportDto;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,7 @@ import java.util.Optional;
 @RequestMapping("/v1/tasks")
 public class TaskController {
 
+    static final Logger logger = LoggerFactory.getLogger(TaskController.class);
     private final TaskService taskService;
 
     public TaskController(TaskService taskService) {
@@ -35,7 +38,8 @@ public class TaskController {
                 .path("/{id}")
                 .buildAndExpand(createdTask.getId())
                 .toUri();
-        
+
+        logger.atInfo().log("Task created with id: {}", createdTask.getId());
         return ResponseEntity.created(location).body(new TaskCreationResponseDto(createdTask.getId()));
     }
 
@@ -49,6 +53,8 @@ public class TaskController {
         Optional<Task> optionalTask = taskService.pullAndClaimTask(type);
         if (optionalTask.isPresent()) {
             Task task = optionalTask.get();
+
+            logger.atInfo().log("Client executor claimed task with id: {}", task.getId());
             return ResponseEntity.ok(TaskClaimedDto.builder()
                     .id(task.getId())
                     .type(task.getType())
@@ -56,6 +62,7 @@ public class TaskController {
                     .claimToken(task.getClaimToken())
                     .build());
         } else {
+            logger.atInfo().log("No tasks currently available of type {}", type);
             return ResponseEntity.noContent().build();
         }
     }
@@ -64,6 +71,7 @@ public class TaskController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reportExecutionResult(@PathVariable Long id, @RequestBody @Valid TaskReportDto taskReport) {
         taskService.reportTaskOutcome(id, taskReport);
+        logger.atInfo().log("Client executor reported {} on task with id: {}", taskReport.outcome(), id);
     }
 
     @GetMapping("/dead")
@@ -75,6 +83,7 @@ public class TaskController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void replayTask(@PathVariable Long id) {
         taskService.replayTask(id);
+        logger.atInfo().log("Client replayed task with id: {}", id);
     }
 
 

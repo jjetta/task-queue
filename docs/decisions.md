@@ -113,3 +113,29 @@ that `WHERE` clause or duplicating the branching logic in SQL.
 caught per-task in the sweeper's loop and logged at WARN — expected, correct behavior, not a bug. Each task is swept 
 in its own `@Transactional` method (not one transaction for the whole batch), so one conflict doesn't affect 
 any other task in the same run.
+
+---
+
+## 7. Authentication/authorization deferred
+
+**Context:** every endpoint is currently open. any caller can create tasks, pull and claim work of any `type`, report 
+outcomes, and view or replay the dead-letter queue. I built this project envisioning there's a single integrating dev/team, 
+but at runtime their system (should) show up as multiple distinct callers hitting this API: their application code 
+enqueueing work (producer), their worker processes claiming and reporting on it (executor), and the dev/an admin script 
+managing the DLQ (operator). Each is a different network principal.
+
+**Decision:** ship without authn/authz for now. This is a deliberate scope cut, not just overlooking it. The actor 
+model above needs to be settled before picking a mechanism, and the system isn't being exposed beyond a trusted 
+environment yet.
+
+**Alternatives considered:**
+- *Build it now* — rejected for now: whether executors should be restricted to specific `type`s, and how 
+fine-grained operator permissions need to be, aren't settled yet; don't wanna risk building the wrong thing by 
+picking a mechanism before that's clear
+- *Full OAuth2/user-login flow* — Callers in the context of this project are expected to be services 
+(a web app, a worker fleet, an admin script), not people, so a simpler per-caller identity mapped to a role 
+(producer/executor/operator) is probably sufficient once this is tackled.
+
+**Consequences:** must be resolved before any deployment outside a fully trusted network. The `claimToken` issued at 
+claim time is a per-task capability (proves *this* caller won *this specific* claim) — it is not a substitute for 
+authenticating who's allowed to call the API at all, and it protects nothing on endpoints it isn't checked against.

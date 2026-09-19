@@ -26,7 +26,7 @@ then move to a `DEAD` state for manual inspection and replay.
 never one spanning the whole task lifecycle, so a crash mid-execution can't silently roll back the claim itself.
 - **Two locking strategies, deliberately different** — a pessimistic conditional update for the claim path, optimistic 
 `@Version` locking for the sweeper ([decision #6](docs/decisions.md#6-pessimistic-locking-for-the-claim-optimistic-locking-for-the-sweeper)).
-- **RFC 7807 error responses** — every failure mode returns a structured `ProblemDetail`, not an ad hoc error shape.
+- **RFC 9457 error responses** — every failure mode returns a structured `ProblemDetail`, not an ad hoc error shape.
 - **Metrics that mean something** — queue depth, claim-to-completion latency, success/failure counts via Micrometer/Prometheus.
 
 ## Tech stack
@@ -57,7 +57,9 @@ docker compose up -d      # starts Postgres on localhost:5433
 | `GET /v1/tasks/dead` | List tasks that exhausted retries (the DLQ) |
 | `POST /v1/tasks/{id}/replay` | Reset a dead task back to `PENDING` |
 
-Full detail: [`docs/api.md`](docs/api.md). System design and the task state machine: [`docs/architecture.md`](docs/architecture.md).
+- Behavior and rationale for each endpoint: [`docs/api.md`](docs/api.md).
+- Exact, always-current request/response schemas: [Swagger UI](http://localhost:8080/swagger-ui.html) (`/v3/api-docs` for raw OpenAPI).
+- System design and the task state machine: [`docs/architecture.md`](docs/architecture.md).
 
 ## Testing
 

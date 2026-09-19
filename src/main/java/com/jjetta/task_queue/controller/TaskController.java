@@ -1,11 +1,8 @@
 package com.jjetta.task_queue.controller;
 
+import com.jjetta.task_queue.dto.*;
 import com.jjetta.task_queue.model.Task;
 import com.jjetta.task_queue.service.TaskService;
-import com.jjetta.task_queue.dto.TaskClaimedDto;
-import com.jjetta.task_queue.dto.TaskCreationRequestDto;
-import com.jjetta.task_queue.dto.TaskCreationResponseDto;
-import com.jjetta.task_queue.dto.TaskReportDto;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +41,9 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public Task getTask(@PathVariable Long id) {
-        return taskService.getTaskById(id);
+    public ResponseEntity<TaskViewDto> getTask(@PathVariable Long id) {
+        Task task = taskService.getTaskById(id);
+        return ResponseEntity.ok(new TaskViewDto(task));
     }
 
     @GetMapping("/next")
@@ -55,12 +53,7 @@ public class TaskController {
             Task task = optionalTask.get();
 
             logger.atInfo().log("Client executor claimed task with id: {}", task.getId());
-            return ResponseEntity.ok(TaskClaimedDto.builder()
-                    .id(task.getId())
-                    .type(task.getType())
-                    .params(task.getParams())
-                    .claimToken(task.getClaimToken())
-                    .build());
+            return ResponseEntity.ok(new TaskClaimedDto(task));
         } else {
             logger.atInfo().log("No tasks currently available of type {}", type);
             return ResponseEntity.noContent().build();
@@ -75,8 +68,12 @@ public class TaskController {
     }
 
     @GetMapping("/dead")
-    public List<Task> getDeadTasks() {
-        return taskService.getDeadTasks();
+    public ResponseEntity<List<TaskViewDto>> getDeadTasks() {
+        var deadTasks = taskService.getDeadTasks()
+                .stream()
+                .map(TaskViewDto::new)
+                .toList();
+        return ResponseEntity.ok(deadTasks);
     }
 
     @PostMapping("/{id}/replay")

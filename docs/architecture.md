@@ -51,15 +51,17 @@ by one:
 - If the failure count is greater than `maxRetries`, the task is moved to the DLQ (dead-letter-queue, or simply, a `DEAD` state)
 
 ### Age-Based Eviction
-A `PENDING` task that hasn't been executed by configured age threshold (measured from `createdAt`) gets evicted (sent 
-to the DLQ). This catches typo's in task type names, or dead types that will never be executed. (ADR: eviction vs. liveness detection)
+A `PENDING` task that has never been claimed (`failureCount = 0`) and has sat past the configured age threshold 
+(measured from `createdAt`) gets evicted (sent straight to the DLQ). This is scoped to never-claimed tasks 
+specifically: once a task has failed at least once, an executor clearly exists for its `type`, so the eviction 
+sweep leaves it to the ordinary retry/backoff cycle instead. This catches typos in task type names, or dead types 
+that will never be executed. (ADR: eviction vs. liveness detection)
 
 ### Hung/Abandoned Task Detection
 A scheduled check finds rows stuck in `RUNNING` past `claimed_at + timeout` and treats them as failed/orphaned.
 This is the only recovery mechanism needed, since execution never runs on this system's own threads 
 (ADR: eviction and hang-detection as separate mechanisms).
 
-### Graceful Shutdown 
 ### Task Entity
 | Field          | Purpose                                                                                     |
 |----------------|---------------------------------------------------------------------------------------------|

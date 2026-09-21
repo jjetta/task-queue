@@ -1,4 +1,14 @@
 services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/taskqueue
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:16
     environment:
@@ -7,3 +17,9 @@ services:
       POSTGRES_PASSWORD: taskqueue
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskqueue -d taskqueue"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s

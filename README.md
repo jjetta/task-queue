@@ -8,9 +8,9 @@ Most non-obvious design choices in this repo are written down, with the alternat
 
 ## Why Postgres and not a broker?
 
-Because a committed transaction is a stronger durability guarantee than most message brokers give you for free,
-and `SELECT ... FOR UPDATE SKIP LOCKED` already gives concurrent claimers exactly the atomicity a broker would 
-otherwise need to be introduced to provide. One system of record, one place correctness lives.
+A committed transaction is a stronger durability guarantee than what most message brokers give you for free,
+and `SELECT ... FOR UPDATE SKIP LOCKED` already gives concurrent claimers the exact atomicity a broker would 
+otherwise need to be introduced to provide. There's one system of record, and one place where correctness lives.
 The full reasoning can be found in [decision #1](docs/decisions.md#1-postgres-as-the-queue).
 
 ## Design highlights
@@ -27,7 +27,7 @@ never one spanning the whole task lifecycle, so a crash mid-execution can't sile
 - **Two locking strategies, deliberately different** — a pessimistic conditional update for the claim path, optimistic 
 `@Version` locking for the sweeper ([decision #6](docs/decisions.md#6-pessimistic-locking-for-the-claim-optimistic-locking-for-the-sweeper)).
 - **RFC 9457 error responses** — every failure mode returns a structured `ProblemDetail`, not an ad hoc error shape.
-- **Metrics that mean something** — queue depth, claim-to-completion latency, success/failure counts via Micrometer/Prometheus.
+- **Domain metrics** — queue depth, claim-to-completion latency, success/failure counts via Micrometer/Prometheus.
 
 ## Tech stack
 
@@ -72,7 +72,9 @@ Unit tests and Testcontainers-backed integration tests (real Postgres, real tran
 
 ## Status & roadmap
 
-Single-node, correctness-first today: one Postgres instance as the system of record, safely shared by any number of producer/executor processes. Not yet authenticated, not yet horizontally scaled or partitioned, and not yet runnable without a local clone — all deliberately scoped, not overlooked:
+As of today, the system is single-node, with a focus on correctness first: one Postgres instance as the system of record, 
+safely shared by any number of producer/executor processes. It's not yet authenticated, horizontally scaled or partitioned, 
+and not yet runnable without a local clone. All deliberately scoped, not overlooked:
 
 - **Auth/authz** — every endpoint is currently open. See [decision #7](docs/decisions.md#7-authenticationauthorization-deferred) for the producer/executor/operator actor model this is designed around.
 - **Horizontal scale-out** — claiming is already safe across multiple app instances sharing one Postgres; running and load-testing that, then pushing into partitioning/replication, is next.

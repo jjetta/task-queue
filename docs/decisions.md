@@ -139,3 +139,26 @@ picking a mechanism before that's clear
 **Consequences:** must be resolved before any deployment outside a fully trusted network. The `claimToken` issued at 
 claim time is a per-task capability (proves *this* caller won *this specific* claim) — it is not a substitute for 
 authenticating who's allowed to call the API at all, and it protects nothing on endpoints it isn't checked against.
+
+---
+
+## 8. Standard JRE container image over GraalVM Native Image
+
+**Context:** the app is being containerized so `docker-compose.yml` can reference a published image instead of a 
+local build. GraalVM Native Image was considered for that image, mainly for faster cold start and a smaller runtime 
+footprint.
+
+**Decision:** ship a standard JRE-based image for now, not a Native Image build.
+
+**Alternatives considered:**
+- *GraalVM Native Image* — rejected for this phase: fast cold start mainly pays off for scale-to-zero or elastic 
+autoscaling deployments, where instances start and stop frequently. This runs as a small number of long-lived 
+instances; startup cost is paid rarely (deploy, crash-restart), not continuously. Against that limited upside, 
+Native Image's closed-world assumption is real integration risk here — Hibernate/JPA's lazy-loading proxies and 
+dynamic bytecode generation are the most likely friction point, Spring's AOT processing narrows but doesn't 
+eliminate that risk, and losing the JIT's runtime profile-guided optimization is a real (if largely moot, since 
+this workload is I/O-bound on Postgres) cost with no offsetting benefit given the upside doesn't apply yet.
+
+**Consequences:** revisit if the horizontal scale-out work (§ roadmap) moves toward elastic autoscaling — that's 
+the point where instances starting frequently in response to load would make fast cold start a real operational 
+need instead of a theoretical one, and the trade would need re-evaluating with that concrete need in hand.

@@ -29,9 +29,6 @@ management:
       show-details: always
 
 app:
-  queue:
-    stream-key: task-stream
-    consumer-group: workers
   retry:
     max-retries: 3
     base-delay: 2s

@@ -15,7 +15,7 @@
 
     <!-- Info -->
 	<name>Distributed Task Queue</name>
-	<description>A distributed task queue backend built with Spring Boot and Redis.</description>
+	<description>A distributed task queue backend built with Spring Boot and Postgres.</description>
 	<url>https://github.com/jjetta/task-queue</url>
 
     <!-- Licensing -->

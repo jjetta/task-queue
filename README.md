@@ -1,6 +1,6 @@
-# Distributed Task Queue
+# Task Queue
 
-A durable, Postgres-backed task queue for asynchronous work. Any language, any process: producers enqueue tasks over HTTP, 
+A durable, Postgres-backed task queue for asynchronous work. Built for any language, and any process: producers enqueue tasks over HTTP, 
 executors pull and run them however they like, and the system handles durability, claiming, retries, and dead-letter bookkeeping.
 All without a broker.
 
@@ -8,15 +8,15 @@ Most non-obvious design choices in this repo are written down, with the alternat
 
 ## Why Postgres and not a broker?
 
-A committed transaction is a stronger durability guarantee than what most message brokers give you for free,
-and `SELECT ... FOR UPDATE SKIP LOCKED` already gives concurrent claimers the exact atomicity a broker would 
+A committed transaction is a stronger durability guarantee than what most message brokers give you for free.
+`SELECT ... FOR UPDATE SKIP LOCKED` already gives concurrent claimers the exact atomicity a broker would 
 otherwise need to be introduced to provide. There's one system of record, and one place where correctness lives.
 The full reasoning can be found in [decision #1](docs/decisions.md#1-postgres-as-the-queue).
 
 ## Design highlights
 
-- **Atomic claiming** — an indexed `SELECT ... FOR UPDATE SKIP LOCKED` followed by a conditional 
-`UPDATE ... WHERE status = 'PENDING'` means concurrent executors never race for the same task.
+- **Atomic claiming** — a single `UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING *`
+means concurrent executors never race for the same task, in one database round trip.
 - **Two failure modes, two mechanisms** — a task nobody ever picks up (no executor for its `type`) and a task an 
 executor claimed and then vanished on are different problems with different signals (`createdAt` vs `claimedAt`),
 detected separately via age-based eviction and a hung-task sweeper.
@@ -26,7 +26,7 @@ then move to a `DEAD` state for manual inspection and replay.
 never one spanning the whole task lifecycle, so a crash mid-execution can't silently roll back the claim itself.
 - **Two locking strategies, deliberately different** — a pessimistic conditional update for the claim path, optimistic 
 `@Version` locking for the sweeper ([decision #6](docs/decisions.md#6-pessimistic-locking-for-the-claim-optimistic-locking-for-the-sweeper)).
-- **RFC 9457 error responses** — every failure mode returns a structured `ProblemDetail`, not an ad hoc error shape.
+- **RFC 9457 error responses** — every failure mode returns a structured `ProblemDetail`
 - **Domain metrics** — queue depth, claim-to-completion latency, success/failure counts via Micrometer/Prometheus.
 
 ## Tech stack
@@ -37,7 +37,7 @@ Java 21 · Spring Boot 4 (Web MVC, Data JPA, Validation, Actuator) · PostgreSQL
 
 ### Just running it
 
-No clone, no Java, no Maven — only Docker. Grab the one compose file and start it:
+Grab the compose file and start it with Docker:
 
 ```bash
 curl -O https://raw.githubusercontent.com/jjetta/task-queue/main/docker-compose.prod.yml
@@ -46,16 +46,6 @@ docker compose -f docker-compose.prod.yml up -d
 
 This pulls the published image from GHCR and starts it alongside a Postgres container, with a persistent volume for its data.
 
-### Contributing
-
-```bash
-git clone https://github.com/jjetta/task-queue.git
-cd task-queue
-docker compose up -d      # starts Postgres on localhost:5433
-./mvnw spring-boot:run    # Flyway migrates the schema automatically on boot
-```
-
-Either way:
 - API served on `localhost:8080`.
 - Interactive OpenAPI docs at `/swagger-ui.html`.
 - Actuator health/metrics at `/actuator/health`, `/actuator/metrics`, `/actuator/prometheus`.
@@ -88,10 +78,9 @@ Unit tests and Testcontainers-backed integration tests (real Postgres, real tran
 
 As of today, the system is single-node, with a focus on correctness first: one Postgres instance as the system of record, 
 safely shared by any number of producer/executor processes. It's not yet authenticated, horizontally scaled or partitioned. 
-All deliberately scoped, not overlooked:
 
-- **Auth/authz** — every endpoint is currently open. See [decision #7](docs/decisions.md#7-authenticationauthorization-deferred) for the producer/executor/operator actor model this is designed around.
-- **Horizontal scale-out** — claiming's atomicity is enforced by Postgres per-transaction (`SELECT ... FOR UPDATE SKIP LOCKED` + a conditional `UPDATE`), which doesn't distinguish threads from processes; proven under concurrent load in [`TaskServiceIT`](src/test/java/com/jjetta/task_queue/service/TaskServiceIT.java). Deploying and load-testing it as literal separate instances is next, mainly to validate connection-pool sizing and throughput at real scale, then pushing into partitioning/replication.
+- **Auth/authz** — every endpoint is currently open. Gotta secure endpoints before deployment.
+- **Horizontal scale-out** — claiming's atomicity is enforced by Postgres per-transaction (a single `UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED)`), which doesn't distinguish threads from processes; proven under concurrent load in [`TaskServiceIT`](src/test/java/com/jjetta/task_queue/service/TaskServiceIT.java). Deploying and load-testing it as literal separate instances is next, mainly to validate connection-pool sizing and throughput at real scale, then pushing into partitioning/replication.
 
 ## License
 

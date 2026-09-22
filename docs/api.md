@@ -16,7 +16,7 @@ All routes below are prefixed with `/v1`.
 
 ### GET /v1/tasks/next?type=X - pull/claim
 - An executor asks for a `PENDING` task matching the `type` it knows how to run. 
-- Internally, this runs the indexed `SELECT ... FOR UPDATE SKIP LOCKED` query, followed by the atomic `UPDATE` claim.
+- Internally, this runs a single `UPDATE` claim, targeting the row an indexed `SELECT ... FOR UPDATE SKIP LOCKED` subquery selects.
 - If an eligible task is present, said task's id, type, params, and claimToken are returned to the client.
 - "No eligible task right now" is represented by a 204 NO CONTENT HTTP status.
 

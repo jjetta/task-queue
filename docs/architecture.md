@@ -20,23 +20,31 @@ what signals that a task is "queued" for execution. Same thing goes for task dis
 index on `(type, next_retry_at)` `WHERE status = 'PENDING'` remains relatively small. 
 
 ### Concurrency Safety: The Atomic Claim
-Here's where the magic happens:
+Here's where the magic happens. Discovery and claiming happen in a single query:
 
-```
-UPDATE tasks SET status = 'RUNNING' WHERE id = ? AND status = 'PENDING'
+```sql
+UPDATE tasks
+SET status = 'RUNNING',
+    claimed_at = now(),
+    claim_token = gen_random_uuid()
+WHERE id = (
+    SELECT id FROM tasks
+    WHERE status = 'PENDING'
+        AND type = :type
+        AND (next_retry_at <= now() OR next_retry_at IS NULL)
+    ORDER BY COALESCE(next_retry_at, created_at)
+    FOR UPDATE SKIP LOCKED
+    LIMIT 1
+)
+RETURNING *
 ```
 
-This query will have one of two outcomes:
-- row count of 1: the caller won the claim 
-- row count of 0: the task was already claimed OR is now ineligible
+The subquery does the finding: `SKIP LOCKED` skips rows another concurrent claim already has locked, and 
+`FOR UPDATE` locks the one row it picks. The outer `UPDATE` does the claiming against that exact row, and 
+`RETURNING *` hands back the claimed row in the same round trip — no separate fetch needed afterward.
 
-Postgres's row-level locking is what makes this safe.
-
-```
-SELECT ... FOR UPDATE SKIP LOCKED
-```
-In the above query `SKIP LOCKED` skips locked rows and `FOR UPDATE` places a lock on the row that is successfully 
-acquired by the query. This way, concurrent requests don't collide. 
+Two concurrent claims can never pick the same row: `FOR UPDATE SKIP LOCKED` guarantees each caller's subquery 
+lands on a row no other in-flight claim holds a lock on.
 
 ### State Machine
 Tasks can be in one of four states:
@@ -78,11 +86,11 @@ This is the only recovery mechanism needed, since execution never runs on this s
 | `claimToken`   | UUID identifying which executor may report on this task                                     |
 
 Two different locking strategies guard against stale writes, used in different places for different reasons *(ADR: pessimistic claim vs. optimistic sweeper guard)*:
-- **Pessimistic** — the claim's conditional `UPDATE ... WHERE status = 'PENDING'` (§ Concurrency Safety above).
+- **Pessimistic** — the claim's single `UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED)` (§ Concurrency Safety above).
 - **Optimistic** — `@Version` on the sweeper's write, since the sweeper reuses `Task.recordFailure()`'s existing Java branching/backoff logic rather than reimplementing it as raw SQL.
 
 ### Observability
-On top of what you get from Spring Boot Actuator for free, Micrometer domain specific metrics such as:
+On top of what Spring Boot Actuator gives you for free, I wired up domain specific metrics with Micrometer:
 - Queue depth - Gauge, simple count of `PENDING` rows
 - Task latency - (`claimedAt -> completedAt`)
 - Error rate - a tagged Counter (`tasks.processed`, tagged `outcome=success/failure`)

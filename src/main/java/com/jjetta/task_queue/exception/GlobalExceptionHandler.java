@@ -28,10 +28,7 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
-    @ExceptionHandler({
-            NullPointerException.class,
-            IllegalArgumentException.class
-    })
+    @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleBadRequestException(RuntimeException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,

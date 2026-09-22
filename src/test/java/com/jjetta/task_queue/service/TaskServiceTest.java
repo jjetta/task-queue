@@ -100,13 +100,7 @@ class TaskServiceTest {
         Task testNextFoundTask = Task.createTask(typeParam, Map.of());
         ReflectionTestUtils.setField(testNextFoundTask, "id", id);
 
-        Mockito.when(taskRepository.findNextTask(typeParam))
-                .thenReturn(Optional.of(testNextFoundTask));
-
-        Mockito.when(taskRepository.claimTask(Mockito.anyLong()))
-                .thenReturn(1);
-
-        Mockito.when(taskRepository.findById(id))
+        Mockito.when(taskRepository.findAndClaimNextTask(typeParam))
                 .thenReturn(Optional.of(testNextFoundTask));
 
         Optional<Task> result = taskService.pullAndClaimTask(typeParam);
@@ -114,66 +108,21 @@ class TaskServiceTest {
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualTo(testNextFoundTask);
 
-        Mockito.verify(taskRepository).findNextTask(typeParam);
-        Mockito.verify(taskRepository).claimTask(id);
-        Mockito.verify(taskRepository).findById(id);
+        Mockito.verify(taskRepository).findAndClaimNextTask(typeParam);
     }
 
     @Test
     void shouldPullAndClaimEmptyTaskSuccessfully() {
         String typeParam = "background-job";
-        Mockito.when(taskRepository.findNextTask(Mockito.anyString()))
+        Mockito.when(taskRepository.findAndClaimNextTask(Mockito.anyString()))
                 .thenReturn(Optional.empty());
 
         Optional<Task> result = taskService.pullAndClaimTask(typeParam);
 
         assertThat(result).isEmpty();
 
-        Mockito.verify(taskRepository).findNextTask(Mockito.anyString());
+        Mockito.verify(taskRepository).findAndClaimNextTask(Mockito.anyString());
         Mockito.verifyNoMoreInteractions(taskRepository);
-    }
-
-    @Test
-    void shouldThrowIllegalStateExceptionWhenTaskClaimFails() {
-        String typeParam = "background-job";
-        Long id = 3L;
-
-        Task testTask = Task.createTask(typeParam, Map.of());
-        ReflectionTestUtils.setField(testTask, "id", id);
-
-        Mockito.when(taskRepository.findNextTask(typeParam))
-                .thenReturn(Optional.of(testTask));
-
-        Mockito.when(taskRepository.claimTask(id))
-                .thenReturn(0);
-
-        assertThatThrownBy(() -> taskService.pullAndClaimTask(typeParam))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Failed to claim task " + id);
-
-        Mockito.verify(taskRepository, Mockito.never()).findById(Mockito.anyLong());
-    }
-
-    @Test
-    void shouldThrowIllegalStateExceptionWhenTaskVanishesAfterClaiming() {
-        String typeParam = "background-job";
-        Long id = 3L;
-
-        Task testTask = Task.createTask(typeParam, Map.of());
-        ReflectionTestUtils.setField(testTask, "id", id);
-
-        Mockito.when(taskRepository.findNextTask(typeParam))
-                .thenReturn(Optional.of(testTask));
-
-        Mockito.when(taskRepository.claimTask(id))
-                .thenReturn(1);
-
-        Mockito.when(taskRepository.findById(id))
-                .thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> taskService.pullAndClaimTask(typeParam))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Pending task discovered, locked, and claimed, but not found.");
     }
 
     @Test

@@ -43,20 +43,7 @@ public class TaskService {
 
     @Transactional
     public Optional<Task> pullAndClaimTask(String type) {
-        Optional<Task> pendingTask = taskRepository.findNextTask(type);
-        if (pendingTask.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Task task = pendingTask.get();
-
-        int rowsAffected = taskRepository.claimTask(task.getId());
-        if (rowsAffected == 0) {
-            throw new IllegalStateException("Failed to claim task " + task.getId());
-        }
-
-        return Optional.of(taskRepository.findById(task.getId())
-                .orElseThrow(() -> new IllegalStateException("Pending task discovered, locked, and claimed, but not found.")));
+        return taskRepository.findAndClaimNextTask(type);
     }
 
    public void reportTaskOutcome(Long id, TaskReportDto taskReport) {

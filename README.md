@@ -35,6 +35,19 @@ Java 21 · Spring Boot 4 (Web MVC, Data JPA, Validation, Actuator) · PostgreSQL
 
 ## Getting started
 
+### Just running it
+
+No clone, no Java, no Maven — only Docker. Grab the one compose file and start it:
+
+```bash
+curl -O https://raw.githubusercontent.com/jjetta/task-queue/main/docker-compose.prod.yml
+docker compose -f docker-compose.prod.yml up -d
+```
+
+This pulls the published image from GHCR and starts it alongside a Postgres container, with a persistent volume for its data.
+
+### Contributing
+
 ```bash
 git clone https://github.com/jjetta/task-queue.git
 cd task-queue
@@ -42,6 +55,7 @@ docker compose up -d      # starts Postgres on localhost:5433
 ./mvnw spring-boot:run    # Flyway migrates the schema automatically on boot
 ```
 
+Either way:
 - API served on `localhost:8080`.
 - Interactive OpenAPI docs at `/swagger-ui.html`.
 - Actuator health/metrics at `/actuator/health`, `/actuator/metrics`, `/actuator/prometheus`.
@@ -73,12 +87,11 @@ Unit tests and Testcontainers-backed integration tests (real Postgres, real tran
 ## Status & roadmap
 
 As of today, the system is single-node, with a focus on correctness first: one Postgres instance as the system of record, 
-safely shared by any number of producer/executor processes. It's not yet authenticated, horizontally scaled or partitioned, 
-and not yet runnable without a local clone. All deliberately scoped, not overlooked:
+safely shared by any number of producer/executor processes. It's not yet authenticated, horizontally scaled or partitioned. 
+All deliberately scoped, not overlooked:
 
 - **Auth/authz** — every endpoint is currently open. See [decision #7](docs/decisions.md#7-authenticationauthorization-deferred) for the producer/executor/operator actor model this is designed around.
-- **Horizontal scale-out** — claiming is already safe across multiple app instances sharing one Postgres; running and load-testing that, then pushing into partitioning/replication, is next.
-- **Publish a container image** — package the app itself as a Docker image and publish it via CI, so `docker-compose.yml` can reference the published image instead of a local build. At that point the whole stack (app + Postgres) runs from a single compose file, with no clone, Java, or Maven required.
+- **Horizontal scale-out** — claiming's atomicity is enforced by Postgres per-transaction (`SELECT ... FOR UPDATE SKIP LOCKED` + a conditional `UPDATE`), which doesn't distinguish threads from processes; proven under concurrent load in [`TaskServiceIT`](src/test/java/com/jjetta/task_queue/service/TaskServiceIT.java). Deploying and load-testing it as literal separate instances is next, mainly to validate connection-pool sizing and throughput at real scale, then pushing into partitioning/replication.
 
 ## License
 

@@ -1,0 +1,28 @@
+services:
+  app:
+    image: ghcr.io/jjetta/task-queue:latest
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/taskqueue
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: taskqueue
+      POSTGRES_USER: taskqueue
+      POSTGRES_PASSWORD: taskqueue
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskqueue -d taskqueue"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - taskqueue-db:/var/lib/postgresql/data
+
+volumes:
+  taskqueue-db:

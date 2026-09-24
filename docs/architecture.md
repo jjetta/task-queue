@@ -1,3 +1,4 @@
+
 # Architecture
 This document is a description of the intended architecture of the system. 
 
@@ -52,7 +53,7 @@ Tasks can be in one of four states:
 - `RUNNING`
 - `COMPLETED`
 - `DEAD`
-
+<img width="2501" height="1186" alt="Screenshot 2026-09-22 at 8 42 14 PM" src="https://github.com/user-attachments/assets/917da36d-2825-4535-8ed7-6b22c67aae1c" />
 `FAILED` is never persisted as a state on a task, as failure simply results in incrementing a task's failure count 
 by one:
 - If the failure count is less than `maxRetries`, the state moves back to `PENDING`
